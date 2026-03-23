@@ -1,6 +1,6 @@
 {
   "name": "la-vie-en-rose-34-pos",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "main": "electron/main.js",
   "scripts": {
     "dev": "concurrently -n backend,frontend -c blue,magenta \"npm:dev:backend\" \"npm:dev:frontend\"",
