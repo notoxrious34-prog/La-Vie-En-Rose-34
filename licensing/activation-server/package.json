@@ -1,0 +1,16 @@
+{
+  "name": "la-vie-en-rose-34-license-server",
+  "version": "1.0.0",
+  "description": "La Vie En Rose 34 License Activation Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.7.0",
+    "express": "^4.21.0",
+    "cors": "^2.8.5",
+    "uuid": "^11.0.0"
+  }
+}

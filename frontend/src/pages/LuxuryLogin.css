@@ -1,0 +1,651 @@
+/*
+ * LA VIE EN ROSE 34 - Ultimate Luxury Login
+ * Premium Visual Experience for 8K+ Display
+ * Enhanced with AI Design Principles
+ */
+
+/* Luxury Login Page - Ultimate */
+.luxury-login {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  --surface-0: #050506;
+  --surface-1: #0c0c10;
+  --surface-2: #12121a;
+  --fg: rgba(255, 255, 255, 0.92);
+  --fg-subtle: rgba(255, 255, 255, 0.62);
+  --border-soft: rgba(255, 255, 255, 0.12);
+  --border: rgba(255, 255, 255, 0.16);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --brand-gunmetal: #0b0b10;
+  --accent: var(--rose-gold-500);
+  --accent-strong: var(--rose-gold-600);
+  --danger: #ff4d4f;
+  --focus-ring: 0 0 0 4px color-mix(in srgb, var(--accent) 26%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--surface-0) 94%, black) 0%,
+    color-mix(in srgb, var(--surface-0) 88%, black) 30%,
+    color-mix(in srgb, var(--surface-0) 92%, black) 70%,
+    color-mix(in srgb, var(--surface-0) 98%, black) 100%
+  );
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 24px 0;
+}
+
+/* Ambient Glow Layer */
+.login-ambient {
+  position: fixed;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 80% 50% at 15% 30%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 85% 70%, color-mix(in srgb, var(--color-secondary-500) 7%, transparent) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 60% at 50% 100%, color-mix(in srgb, var(--accent) 4%, transparent) 0%, transparent 40%);
+  pointer-events: none;
+  animation: ambientLogin 10s var(--ease-smooth) infinite;
+}
+
+@keyframes ambientLogin {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+/* Animated Background Orbs - Premium */
+.login-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.login-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--brand-gunmetal) 62%, transparent), transparent 70%),
+    var(--brand-art-url),
+    var(--brand-art-url-fallback);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 50% 42%;
+  background-blend-mode: overlay, soft-light, soft-light;
+  opacity: 0.26;
+  mask-image: radial-gradient(circle at 50% 40%, black 0%, black 50%, transparent 80%);
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.5;
+  animation: float 25s infinite var(--ease-smooth);
+}
+
+.orb-rose-1 {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 60%, transparent) 0%, color-mix(in srgb, var(--accent) 20%, transparent) 40%, transparent 70%);
+  top: -15%;
+  inset-inline-start: -10%;
+  animation-delay: 0s;
+}
+
+.orb-rose-2 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 40%, transparent) 0%, color-mix(in srgb, var(--accent) 15%, transparent) 40%, transparent 70%);
+  bottom: -10%;
+  inset-inline-end: -5%;
+  animation-delay: -8s;
+}
+
+.orb-gold {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-secondary-500) 35%, transparent) 0%, color-mix(in srgb, var(--color-secondary-500) 10%, transparent) 40%, transparent 70%);
+  top: 40%;
+  inset-inline-start: 25%;
+  animation-delay: -16s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -25px) scale(1.05); }
+  50% { transform: translate(-15px, 15px) scale(0.95); }
+  75% { transform: translate(25px, 30px) scale(1.02); }
+}
+
+/* Grid Pattern Overlay - Subtle */
+.grid-pattern {
+  position: absolute;
+  inset: 0;
+  background-image: 
+    linear-gradient(color-mix(in srgb, var(--accent) 2%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--accent) 2%, transparent) 1px, transparent 1px);
+  background-size: 60px 60px;
+  opacity: 0.4;
+}
+
+/* Logo Watermark - Ultimate */
+.watermark-logo {
+  position: fixed;
+  top: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.watermark-img {
+  width: 600px;
+  height: 600px;
+  opacity: 0.02;
+  filter: grayscale(100%) blur(1px) contrast(1.05);
+}
+
+/* Login Container - Premium */
+.login-container {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 460px;
+  padding: 0 1.5rem;
+}
+
+/* Glass Card - Ultimate Glassmorphism */
+.glass-card {
+  position: relative;
+  background: color-mix(in srgb, var(--surface-1) 84%, transparent);
+  backdrop-filter: blur(30px);
+  -webkit-backdrop-filter: blur(30px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-3xl);
+  padding: var(--space-8);
+  box-shadow: 
+    0 25px 50px -12px color-mix(in srgb, black 60%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--fg) 4%, transparent),
+    inset 0 1px 0 color-mix(in srgb, var(--fg) 10%, transparent),
+    inset 0 -1px 0 color-mix(in srgb, black 24%, transparent);
+  overflow: hidden;
+}
+
+/* Card Shine Effect */
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--fg) 6%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  animation: cardShine 10s infinite var(--ease-smooth);
+  pointer-events: none;
+}
+
+@keyframes cardShine {
+  0% { transform: translateX(-100%); }
+  20% { transform: translateX(100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Card Border Glow */
+.glass-card::after {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: var(--radius-3xl);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 30%, transparent), transparent 50%, color-mix(in srgb, var(--accent) 10%, transparent));
+  z-index: -1;
+  opacity: 0.5;
+  mask: linear-gradient(var(--mask-solid) 0 0) content-box, linear-gradient(var(--mask-solid) 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  padding: 1px;
+}
+
+/* Logo Section - Premium */
+.logo-section {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.logo-glow {
+  position: relative;
+  padding: 1.25rem;
+}
+
+.logo-glow::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 20%, transparent) 0%, transparent 70%);
+  filter: blur(20px);
+}
+
+.login-logo {
+  width: 140px;
+  height: auto;
+  object-fit: contain;
+  position: relative;
+  filter: drop-shadow(0 0 20px color-mix(in srgb, var(--accent) 30%, transparent));
+}
+
+/* Brand Section - Ultimate */
+.brand-section {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.brand-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: 0.1em;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.4rem;
+}
+
+.text-gradient {
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    color-mix(in srgb, var(--accent) 35%, white) 30%,
+    color-mix(in srgb, var(--accent) 22%, white) 50%,
+    color-mix(in srgb, var(--accent) 35%, white) 70%,
+    var(--accent) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerText 4s var(--ease-smooth) infinite;
+}
+
+@keyframes shimmerText {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.brand-number {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.15em;
+  color: var(--fg-subtle);
+  font-weight: 300;
+}
+
+.brand-subtitle {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 0.95rem;
+  color: var(--fg-subtle);
+  letter-spacing: 0.25em;
+  margin-top: 0.6rem;
+  font-style: italic;
+}
+
+/* Divider - Premium */
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  margin-bottom: 2rem;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 25%, transparent), transparent);
+}
+
+.divider-icon {
+  color: var(--accent);
+  font-size: 0.75rem;
+  opacity: 0.6;
+}
+
+/* Form Section */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.35rem;
+  font-weight: 500;
+  color: var(--fg);
+  text-align: center;
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+/* Input Group - Premium */
+.input-group {
+  position: relative;
+}
+
+.luxury-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-icon {
+  position: absolute;
+  inset-inline-start: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  color: var(--accent);
+  opacity: 0.7;
+  z-index: 10;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.luxury-input {
+  width: 100%;
+  padding: var(--space-4) var(--space-5) var(--space-4) var(--space-12);
+  background: color-mix(in srgb, var(--surface-0) 84%, transparent);
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius-lg);
+  color: var(--fg);
+  font-size: var(--text-base);
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+.luxury-input::placeholder {
+  color: var(--fg-subtle);
+}
+
+.luxury-input:focus {
+  outline: none;
+  border-color: color-mix(in srgb, var(--accent) 55%, transparent);
+  box-shadow: var(--focus-ring), 0 0 20px color-mix(in srgb, var(--accent) 12%, transparent);
+  background: color-mix(in srgb, var(--surface-0) 92%, transparent);
+}
+
+.luxury-input:focus + .input-icon,
+.luxury-input-wrapper:focus-within .input-icon {
+  opacity: 1;
+  color: color-mix(in srgb, var(--accent) 35%, white);
+}
+
+.luxury-input:hover:not(:focus) {
+  border-color: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+/* Password Toggle - Premium */
+.password-toggle {
+  position: absolute;
+  inset-inline-end: 1rem;
+  background: none;
+  border: none;
+  color: var(--fg-subtle);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all var(--duration-fast) var(--ease-smooth);
+}
+
+.password-toggle:hover {
+  color: var(--accent);
+}
+
+/* Error Message - Premium */
+.error-message {
+  padding: 0.875rem 1.125rem;
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--danger) 28%, transparent);
+  border-radius: 10px;
+  color: var(--danger);
+  font-size: 0.875rem;
+  text-align: center;
+  animation: errorShake var(--duration-normal) var(--ease-smooth);
+}
+
+@keyframes errorShake {
+  0%, 100% { transform: translateX(0); }
+  20%, 60% { transform: translateX(-5px); }
+  40%, 80% { transform: translateX(5px); }
+}
+
+/* Login Button - Ultimate */
+.login-button {
+  position: relative;
+  width: 100%;
+  padding: 1.125rem 1.75rem;
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    color-mix(in srgb, var(--accent) 20%, white) 25%,
+    var(--accent) 50%,
+    var(--accent-strong) 75%,
+    var(--accent) 100%
+  );
+  background-size: 300% 100%;
+  border: none;
+  border-radius: 14px;
+  color: white;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--ease-luxury);
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 30%, transparent), 0 0 40px color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.login-button:hover:not(:disabled) {
+  background-position: 100% 0;
+  box-shadow: 0 8px 30px color-mix(in srgb, var(--accent) 40%, transparent), 0 0 60px color-mix(in srgb, var(--accent) 20%, transparent);
+  transform: translateY(-2px);
+}
+
+.login-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.98);
+}
+
+.login-button:disabled {
+  opacity: 1;
+  transform: none;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--surface-2) 72%, black) 0%,
+    color-mix(in srgb, var(--surface-2) 82%, black) 50%,
+    color-mix(in srgb, var(--surface-2) 72%, black) 100%
+  );
+  color: color-mix(in srgb, var(--fg) 55%, transparent);
+  box-shadow: 0 2px 14px color-mix(in srgb, black 55%, transparent), 0 0 0 1px color-mix(in srgb, var(--fg) 6%, transparent);
+  cursor: not-allowed;
+}
+
+.login-button:disabled .button-shine {
+  display: none;
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.button-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform var(--duration-fast) var(--ease-smooth);
+}
+
+.login-button:hover .button-icon {
+  transform: translateX(4px);
+}
+
+/* Button Shine Effect */
+.button-shine {
+  position: absolute;
+  top: 0;
+  inset-inline-start: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--fg) 22%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: transform var(--duration-slow) var(--ease-smooth);
+}
+
+.login-button:hover .button-shine {
+  transform: translateX(100%);
+}
+
+/* Loading Spinner */
+.loading-spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid color-mix(in srgb, var(--fg) 24%, transparent);
+  border-top-color: var(--fg);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Login Footer - Premium */
+.login-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1.75rem;
+  border-top: 1px solid color-mix(in srgb, var(--fg) 6%, transparent);
+}
+
+.footer-line {
+  flex: 1;
+  height: 1px;
+  max-width: 70px;
+  background: linear-gradient(90deg, transparent, var(--border-soft), transparent);
+}
+
+.footer-text {
+  font-size: 0.7rem;
+  color: var(--fg-subtle);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+/* Corner Decorations - Ultimate */
+.corner-decoration {
+  position: fixed;
+  width: 70px;
+  height: 70px;
+  border: 1px solid var(--border-soft);
+  pointer-events: none;
+  z-index: 5;
+}
+
+.corner-tl {
+  top: 35px;
+  inset-inline-start: 35px;
+  border-inline-end: none;
+  border-bottom: none;
+  border-top-left-radius: 16px;
+}
+
+.corner-tr {
+  top: 35px;
+  inset-inline-end: 35px;
+  border-inline-start: none;
+  border-bottom: none;
+  border-top-right-radius: 16px;
+}
+
+.corner-bl {
+  bottom: 35px;
+  inset-inline-start: 35px;
+  border-inline-end: none;
+  border-top: none;
+  border-bottom-left-radius: 16px;
+}
+
+.corner-br {
+  bottom: 35px;
+  inset-inline-end: 35px;
+  border-inline-start: none;
+  border-top: none;
+  border-bottom-right-radius: 16px;
+}
+
+/* Responsive - Ultimate */
+@media (max-width: 640px) {
+  .glass-card {
+    padding: 2.5rem 1.75rem;
+  }
+  
+  .brand-title {
+    font-size: 1.65rem;
+  }
+  
+  .login-logo {
+    width: 110px;
+  }
+  
+  .corner-decoration {
+    width: 45px;
+    height: 45px;
+  }
+  
+  .corner-tl { top: 20px; inset-inline-start: 20px; }
+  .corner-tr { top: 20px; inset-inline-end: 20px; }
+  .corner-bl { bottom: 20px; inset-inline-start: 20px; }
+  .corner-br { bottom: 20px; inset-inline-end: 20px; }
+  
+  .watermark-img {
+    width: 400px;
+    height: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .glass-card {
+    padding: 2rem 1.5rem;
+    border-radius: 24px;
+  }
+  
+  .brand-title {
+    font-size: 1.4rem;
+  }
+  
+  .login-logo {
+    width: 90px;
+  }
+  
+  .luxury-input {
+    padding: 0.875rem 1rem 0.875rem 2.75rem;
+  }
+  
+  .input-icon {
+    inset-inline-start: 1rem;
+  }
+}

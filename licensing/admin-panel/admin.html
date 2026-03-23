@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>La Vie En Rose 34 - Licensing Admin</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; width: 100%; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: radial-gradient(circle at top, #fff1f2, #ffffff 35%, #fdf2f8 85%); color: #111827; overflow: hidden; }
+    .container { height: 100%; width: 100%; max-width: none; margin: 0; padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+    header { background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; padding: 20px; border-radius: 16px; margin-bottom: 18px; box-shadow: 0 10px 25px rgba(236, 72, 153, 0.15); }
+    header h1 { font-size: 22px; letter-spacing: 0.3px; }
+    header p { opacity: 0.92; margin-top: 6px; font-size: 13px; }
+
+    .topbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+    .pill { display: inline-flex; gap: 8px; align-items: center; padding: 6px 10px; border-radius: 999px; background: rgba(255,255,255,0.18); border: 1px solid rgba(255,255,255,0.18); font-size: 12px; }
+
+    .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin: 10px 0 14px; }
+    .tab { padding: 10px 12px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.22); background: rgba(255,255,255,0.12); color: white; cursor: pointer; font-weight: 800; font-size: 12px; }
+    .tab.active { background: rgba(255,255,255,0.22); border-color: rgba(255,255,255,0.36); }
+
+    .grid { display: grid; grid-template-columns: 1.1fr 2fr; gap: 16px; }
+    @media (max-width: 1100px) { .grid { grid-template-columns: 1fr; } }
+
+    .card { background: rgba(255,255,255,0.88); border: 1px solid rgba(229, 231, 235, 0.8); border-radius: 16px; box-shadow: 0 8px 24px rgba(17, 24, 39, 0.06); overflow: hidden; }
+    .card-header { padding: 14px 16px; border-bottom: 1px solid rgba(229, 231, 235, 0.8); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .card-header h2 { font-size: 14px; font-weight: 700; color: #111827; }
+    .card-body { padding: 16px; }
+
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .row > * { flex: 1; min-width: 170px; }
+    label { display: block; font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+    input, select { width: 100%; padding: 10px 12px; border: 1px solid rgba(209, 213, 219, 0.9); border-radius: 12px; font-size: 13px; background: rgba(255,255,255,0.95); outline: none; }
+    input:focus, select:focus { border-color: rgba(236, 72, 153, 0.7); box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.12); }
+
+    .btn { padding: 10px 12px; border-radius: 12px; cursor: pointer; font-weight: 700; font-size: 13px; border: 1px solid transparent; background: #ec4899; color: white; }
+    .btn:hover { background: #db2777; }
+    .btn.secondary { background: white; color: #111827; border-color: rgba(209, 213, 219, 0.9); }
+    .btn.secondary:hover { background: #f9fafb; }
+    .btn.danger { background: #ef4444; }
+    .btn.danger:hover { background: #dc2626; }
+    .btn.success { background: #10b981; }
+    .btn.success:hover { background: #059669; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+    @media (max-width: 1100px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    .stat { padding: 14px; border-radius: 16px; border: 1px solid rgba(229,231,235,0.9); background: rgba(255,255,255,0.75); }
+    .stat .k { font-size: 11px; color: #6b7280; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; }
+    .stat .v { margin-top: 8px; font-size: 26px; font-weight: 800; color: #111827; }
+
+    .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .toolbar > * { min-width: 160px; }
+    .toolbar .search { flex: 1; min-width: 240px; }
+
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 10px 10px; border-bottom: 1px solid rgba(229,231,235,0.9); font-size: 12px; text-align: left; vertical-align: top; }
+    th { font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: #6b7280; background: rgba(249,250,251,0.9); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; font-size: 12px; }
+    .tag { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 800; border: 1px solid rgba(229,231,235,0.9); background: white; }
+    .tag.ok { border-color: rgba(16,185,129,0.35); background: rgba(16,185,129,0.08); color: #065f46; }
+    .tag.bad { border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08); color: #7f1d1d; }
+    .muted { color: #6b7280; }
+    .small { font-size: 11px; }
+
+    .login { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 24px; }
+    .login-box { width: 420px; max-width: 100%; background: rgba(255,255,255,0.9); border: 1px solid rgba(229,231,235,0.9); border-radius: 20px; box-shadow: 0 18px 50px rgba(17,24,39,0.12); overflow: hidden; }
+    .login-head { padding: 22px; background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); color: white; }
+    .login-head h1 { font-size: 18px; }
+    .login-head p { margin-top: 6px; font-size: 12px; opacity: 0.9; }
+    .login-body { padding: 18px; }
+
+    .alert { padding: 10px 12px; border-radius: 14px; border: 1px solid rgba(229,231,235,0.9); margin-bottom: 12px; font-size: 12px; }
+    .alert.error { border-color: rgba(239,68,68,0.35); background: rgba(239,68,68,0.08); color: #7f1d1d; }
+    .alert.success { border-color: rgba(16,185,129,0.35); background: rgba(16,185,129,0.08); color: #065f46; }
+
+    .drawer { position: fixed; top: 0; right: 0; height: 100vh; width: 520px; max-width: 92vw; background: rgba(255,255,255,0.96); border-left: 1px solid rgba(229,231,235,0.9); box-shadow: -12px 0 38px rgba(17,24,39,0.12); transform: translateX(110%); transition: transform 200ms ease; z-index: 50; display: flex; flex-direction: column; }
+    .drawer.open { transform: translateX(0); }
+    .drawer-head { padding: 14px 16px; border-bottom: 1px solid rgba(229,231,235,0.9); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .drawer-body { padding: 16px; overflow: auto; }
+    .drawer-actions { padding: 14px 16px; border-top: 1px solid rgba(229,231,235,0.9); display: flex; gap: 10px; }
+    .overlay { position: fixed; inset: 0; background: rgba(17, 24, 39, 0.42); display: none; z-index: 40; }
+    .overlay.show { display: block; }
+
+    .workspace { min-height: 0; flex: 1; overflow: auto; padding-right: 2px; }
+  </style>
+</head>
+<body>
+  <div id="login" class="login">
+    <div class="login-box">
+      <div class="login-head">
+        <h1>La Vie En Rose 34 — Licensing Admin</h1>
+        <p>Secure admin access (Firebase Auth + Firestore allowlist)</p>
+      </div>
+      <div class="login-body">
+        <div id="loginAlert" class="alert error" style="display:none;"></div>
+        <div class="row" style="margin-bottom: 12px;">
+          <div>
+            <label>Email</label>
+            <input id="email" type="email" placeholder="admin@yourdomain.com" />
+          </div>
+          <div>
+            <label>Password</label>
+            <input id="password" type="password" placeholder="••••••••" />
+          </div>
+        </div>
+        <div class="row" style="align-items:center;">
+          <button id="btnLogin" class="btn" style="min-width: 180px;" onclick="login()">Login</button>
+          <button id="btnLogout" class="btn secondary" style="display:none;" onclick="logout()">Logout</button>
+          <div class="muted small" id="loginHint" style="padding: 8px 0;"></div>
+        </div>
+        <div class="muted small" style="margin-top: 12px; line-height: 1.4;">
+          Setup:
+          <br />1) Enable Email/Password provider in Firebase Auth
+          <br />2) Create your admin user
+          <br />3) Create Firestore document: <code>admins/&lt;UID&gt;</code> with <code>{ enabled: true }</code>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="app" style="display:none;">
+    <div class="container">
+      <header>
+        <h1>Licensing Admin Panel</h1>
+        <p>Firestore collections: <code>licenses</code>, <code>customers</code>, <code>devices</code>, <code>activations</code></p>
+        <div class="topbar">
+          <div class="pill"><span id="who"></span></div>
+          <div class="row" style="justify-content:flex-end; min-width: 380px;">
+            <button id="btnFullscreen" class="btn secondary" onclick="toggleFullscreen()">Fullscreen</button>
+            <button class="btn secondary" onclick="refreshAll()">Refresh</button>
+            <button class="btn secondary" onclick="logout()">Logout</button>
+          </div>
+        </div>
+
+        <div class="tabs">
+          <button id="tabLicenses" class="tab active" onclick="showTab('licenses')">Licenses</button>
+          <button id="tabCustomers" class="tab" onclick="showTab('customers')">Customers</button>
+          <button id="tabActivations" class="tab" onclick="showTab('activations')">Activations</button>
+        </div>
+      </header>
+
+      <div class="workspace">
+        <div class="stats">
+          <div class="stat"><div class="k">Licenses</div><div class="v" id="statTotal">0</div></div>
+          <div class="stat"><div class="k">Active</div><div class="v" id="statActive">0</div></div>
+          <div class="stat"><div class="k">Disabled</div><div class="v" id="statDisabled">0</div></div>
+          <div class="stat"><div class="k">Activated Devices</div><div class="v" id="statDevices">0</div></div>
+        </div>
+
+        <div id="panelLicenses" class="grid">
+        <div class="card">
+          <div class="card-header">
+            <h2>Create License</h2>
+            <span class="muted small">Doc ID = license key</span>
+          </div>
+          <div class="card-body">
+            <div id="createAlert" class="alert" style="display:none;"></div>
+            <div class="row" style="margin-bottom: 10px;">
+              <div>
+                <label>Key</label>
+                <input id="cKey" placeholder="LVR34-XXXX-XXXX-XXXX" />
+              </div>
+              <div style="flex:0; min-width: 160px; align-self:flex-end;">
+                <button class="btn secondary" style="width: 100%;" onclick="genKey()">Generate</button>
+              </div>
+            </div>
+            <div class="row" style="margin-bottom: 10px;">
+              <div>
+                <label>Plan</label>
+                <select id="cPlan">
+                  <option value="pro">pro</option>
+                  <option value="basic">basic</option>
+                  <option value="enterprise">enterprise</option>
+                </select>
+              </div>
+              <div>
+                <label>Type</label>
+                <select id="cType" onchange="toggleTypeFields()">
+                  <option value="lifetime">lifetime</option>
+                  <option value="subscription">subscription</option>
+                </select>
+              </div>
+            </div>
+            <div class="row" style="margin-bottom: 10px;">
+              <div>
+                <label>Subscription term</label>
+                <select id="cTerm" disabled>
+                  <option value="monthly">monthly</option>
+                  <option value="yearly">yearly</option>
+                </select>
+              </div>
+              <div>
+                <label>Devices allowed</label>
+                <input id="cDevices" type="number" value="1" min="1" max="50" />
+              </div>
+            </div>
+            <div class="row" style="margin-bottom: 10px;">
+              <div>
+                <label>Status</label>
+                <select id="cStatus">
+                  <option value="active">active</option>
+                  <option value="disabled">disabled</option>
+                </select>
+              </div>
+              <div>
+                <label>Customer (optional)</label>
+                <input id="cCustomer" placeholder="Customer name" />
+              </div>
+            </div>
+            <div class="row">
+              <button class="btn success" onclick="createLicense()">Create</button>
+              <button class="btn secondary" onclick="clearCreate()">Clear</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Licenses</h2>
+            <div class="toolbar">
+              <input id="q" class="search" placeholder="Search key / plan / customer" oninput="renderTable()" />
+              <select id="fStatus" onchange="renderTable()">
+                <option value="">All</option>
+                <option value="active">active</option>
+                <option value="disabled">disabled</option>
+              </select>
+              <select id="fType" onchange="renderTable()">
+                <option value="">All types</option>
+                <option value="lifetime">lifetime</option>
+                <option value="subscription">subscription</option>
+              </select>
+            </div>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div style="overflow:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Key</th>
+                    <th>Status</th>
+                    <th>Plan</th>
+                    <th>Type</th>
+                    <th>Devices</th>
+                    <th>Expires</th>
+                    <th>Customer</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="rows"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <div id="panelCustomers" style="display:none;">
+        <div class="grid">
+          <div class="card">
+            <div class="card-header">
+              <h2>Create / Update Customer</h2>
+              <span class="muted small">Stored in <code>customers</code></span>
+            </div>
+            <div class="card-body">
+              <div id="custAlert" class="alert" style="display:none;"></div>
+              <div class="row" style="margin-bottom: 10px;">
+                <div>
+                  <label>Customer ID (auto if blank)</label>
+                  <input id="custId" placeholder="optional" />
+                </div>
+                <div>
+                  <label>Name</label>
+                  <input id="custName" placeholder="Customer name" />
+                </div>
+              </div>
+              <div class="row" style="margin-bottom: 10px;">
+                <div>
+                  <label>Phone</label>
+                  <input id="custPhone" placeholder="+213..." />
+                </div>
+                <div>
+                  <label>Email</label>
+                  <input id="custEmail" placeholder="customer@email.com" />
+                </div>
+              </div>
+              <div class="row" style="margin-bottom: 10px;">
+                <div>
+                  <label>Notes</label>
+                  <input id="custNotes" placeholder="optional" />
+                </div>
+              </div>
+              <div class="row">
+                <button class="btn success" onclick="saveCustomer()">Save</button>
+                <button class="btn secondary" onclick="clearCustomer()">Clear</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Customers</h2>
+              <div class="toolbar">
+                <input id="custQ" class="search" placeholder="Search customers" oninput="renderCustomers()" />
+              </div>
+            </div>
+            <div class="card-body" style="padding: 0;">
+              <div style="overflow:auto;">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Phone</th>
+                      <th>Email</th>
+                      <th>Licenses</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="custRows"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="panelActivations" style="display:none;">
+        <div class="card">
+          <div class="card-header">
+            <h2>Recent Activations</h2>
+            <span class="muted small">Stored in <code>activations</code></span>
+          </div>
+          <div class="card-body" style="padding: 0;">
+            <div style="overflow:auto;">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>License</th>
+                    <th>Machine ID</th>
+                    <th>Action</th>
+                    <th>App</th>
+                  </tr>
+                </thead>
+                <tbody id="actRows"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      </div>
+    </div>
+  </div>
+
+  <div id="overlay" class="overlay" onclick="closeDrawer()"></div>
+  <div id="drawer" class="drawer">
+    <div class="drawer-head">
+      <div>
+        <div class="small muted">License</div>
+        <div style="font-weight: 900;" id="dKey">-</div>
+      </div>
+      <button class="btn secondary" onclick="closeDrawer()">Close</button>
+    </div>
+    <div class="drawer-body">
+      <div id="dAlert" class="alert" style="display:none;"></div>
+      <div class="row" style="margin-bottom: 10px;">
+        <div>
+          <label>Status</label>
+          <select id="dStatus">
+            <option value="active">active</option>
+            <option value="disabled">disabled</option>
+          </select>
+        </div>
+        <div>
+          <label>Plan</label>
+          <input id="dPlan" />
+        </div>
+      </div>
+      <div class="row" style="margin-bottom: 10px;">
+        <div>
+          <label>Type</label>
+          <select id="dType" onchange="toggleDrawerTypeFields()">
+            <option value="lifetime">lifetime</option>
+            <option value="subscription">subscription</option>
+          </select>
+        </div>
+        <div>
+          <label>Devices allowed</label>
+          <input id="dDevices" type="number" min="1" max="50" />
+        </div>
+      </div>
+      <div class="row" style="margin-bottom: 10px;">
+        <div>
+          <label>Subscription term</label>
+          <select id="dTerm">
+            <option value="monthly">monthly</option>
+            <option value="yearly">yearly</option>
+          </select>
+        </div>
+        <div>
+          <label>Expires at</label>
+          <input id="dExpires" type="datetime-local" />
+        </div>
+      </div>
+
+      <div class="row" style="margin-bottom: 10px;">
+        <div>
+          <label>Customer name</label>
+          <input id="dCustomerName" placeholder="Customer name" />
+        </div>
+        <div>
+          <label>Customer phone</label>
+          <input id="dCustomerPhone" placeholder="+213..." />
+        </div>
+      </div>
+      <div class="row" style="margin-bottom: 10px;">
+        <div>
+          <label>Activated devices</label>
+          <div id="dDevicesList" class="small muted" style="line-height: 1.6;">-</div>
+        </div>
+      </div>
+    </div>
+    <div class="drawer-actions">
+      <button class="btn success" onclick="saveDrawer()">Save</button>
+      <button class="btn danger" onclick="disableDrawer()">Disable</button>
+      <button class="btn secondary" onclick="enableDrawer()">Enable</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js';
+    import {
+      getAuth,
+      onAuthStateChanged,
+      signInWithEmailAndPassword,
+      signOut
+    } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js';
+
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      updateDoc,
+      serverTimestamp,
+      collection,
+      getDocs,
+      query,
+      orderBy,
+      limit,
+      where,
+      addDoc
+    } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey: 'AIzaSyALPyjWSFcMzxCtElgXl_sRts3PJLOzBd8',
+      authDomain: 'lavieenrose-e9e3c.firebaseapp.com',
+      projectId: 'lavieenrose-e9e3c',
+      storageBucket: 'lavieenrose-e9e3c.appspot.com',
+      messagingSenderId: '18015963927',
+      appId: '1:18015963927:web:b1b6b42efe9a498f6fc552',
+      measurementId: 'G-V1R4F699RF'
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    const state = {
+      user: null,
+      isAdmin: false,
+      licenses: [],
+      selected: null,
+      customers: [],
+      activations: [],
+    };
+
+    const $ = (id) => document.getElementById(id);
+
+    function setAlert(el, type, text) {
+      if (!text) {
+        el.style.display = 'none';
+        el.className = 'alert';
+        el.textContent = '';
+        return;
+      }
+      el.style.display = 'block';
+      el.className = 'alert ' + (type || '');
+      el.textContent = text;
+    }
+
+    function showTab(tab) {
+      ['licenses','customers','activations'].forEach((t) => {
+        $('tab' + t.charAt(0).toUpperCase() + t.slice(1)).classList.remove('active');
+        $('panel' + t.charAt(0).toUpperCase() + t.slice(1)).style.display = 'none';
+      });
+      $('tab' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+      $('panel' + tab.charAt(0).toUpperCase() + tab.slice(1)).style.display = '';
+
+      if (tab === 'customers') loadCustomers();
+      if (tab === 'activations') loadActivations();
+    }
+
+    function normalizeKey(key) {
+      return String(key || '').trim().toUpperCase();
+    }
+
+    function validateKeyFormat(key) {
+      return /^LVR34-[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$/.test(normalizeKey(key));
+    }
+
+    function genKeyLocal() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      let key = 'LVR34-';
+      for (let i = 0; i < 3; i++) {
+        let seg = '';
+        for (let j = 0; j < 4; j++) seg += chars.charAt(Math.floor(Math.random() * chars.length));
+        key += seg + (i === 2 ? '' : '-');
+      }
+      return key;
+    }
+
+    function toDateTimeLocal(ms) {
+      if (!ms) return '';
+      const d = new Date(ms);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function fromDateTimeLocal(v) {
+      if (!v) return null;
+      const d = new Date(v);
+      const ms = d.getTime();
+      return Number.isFinite(ms) ? ms : null;
+    }
+
+    async function checkAdmin(uid) {
+      const ref = doc(db, 'admins', uid);
+      const snap = await getDoc(ref);
+      return snap.exists() && snap.data()?.enabled === true;
+    }
+
+    async function loadLicenses() {
+      const q = query(collection(db, 'licenses'), orderBy('createdAt', 'desc'), limit(500));
+      const snap = await getDocs(q);
+      const items = [];
+      snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+      state.licenses = items;
+      updateStats();
+      renderTable();
+    }
+
+    async function loadCustomers() {
+      const q = query(collection(db, 'customers'), orderBy('createdAt', 'desc'), limit(500));
+      const snap = await getDocs(q);
+      const items = [];
+      snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+      state.customers = items;
+      renderCustomers();
+    }
+
+    async function loadActivations() {
+      const q = query(collection(db, 'activations'), orderBy('createdAt', 'desc'), limit(200));
+      const snap = await getDocs(q);
+      const items = [];
+      snap.forEach((d) => items.push({ id: d.id, ...d.data() }));
+      state.activations = items;
+      renderActivations();
+    }
+
+    function updateStats() {
+      const total = state.licenses.length;
+      const active = state.licenses.filter((l) => l.status === 'active').length;
+      const disabled = state.licenses.filter((l) => l.status === 'disabled').length;
+      const devices = state.licenses.reduce((acc, l) => acc + (Array.isArray(l.activatedDevices) ? l.activatedDevices.length : 0), 0);
+      $('statTotal').textContent = String(total);
+      $('statActive').textContent = String(active);
+      $('statDisabled').textContent = String(disabled);
+      $('statDevices').textContent = String(devices);
+    }
+
+    function matchesFilter(l) {
+      const q = String($('q').value || '').trim().toLowerCase();
+      const fStatus = $('fStatus').value;
+      const fType = $('fType').value;
+      if (fStatus && l.status !== fStatus) return false;
+      if (fType && String(l.type || '') !== fType) return false;
+      if (!q) return true;
+      const hay = [l.id, l.plan, l.customerName, l.customerPhone].filter(Boolean).join(' ').toLowerCase();
+      return hay.includes(q);
+    }
+
+    function badgeStatus(status) {
+      if (status === 'active') return '<span class="tag ok">ACTIVE</span>';
+      if (status === 'disabled') return '<span class="tag bad">DISABLED</span>';
+      return `<span class="tag">${String(status || '').toUpperCase()}</span>`;
+    }
+
+    function renderTable() {
+      const rows = state.licenses.filter(matchesFilter).map((l) => {
+        const devices = `${(l.activatedDevices || []).length}/${Number(l.devicesAllowed ?? 1)}`;
+        const expires = l.type === 'lifetime' || !l.expiresAt ? '—' : new Date(l.expiresAt.seconds ? l.expiresAt.seconds * 1000 : l.expiresAt).toLocaleString();
+        const type = String(l.type || 'subscription').toUpperCase();
+        const customer = l.customerName ? `${l.customerName}${l.customerPhone ? ' • ' + l.customerPhone : ''}` : '—';
+        return `
+          <tr>
+            <td><code>${l.id}</code></td>
+            <td>${badgeStatus(l.status)}</td>
+            <td><strong>${String(l.plan || '').toUpperCase()}</strong></td>
+            <td>${type}</td>
+            <td>${devices}</td>
+            <td>${expires}</td>
+            <td>${customer}</td>
+            <td style="text-align:right;"><button class="btn secondary" onclick="openDrawer('${l.id}')">Manage</button></td>
+          </tr>
+        `;
+      }).join('');
+      $('rows').innerHTML = rows || `<tr><td colspan="8" class="muted">No licenses found</td></tr>`;
+    }
+
+    function toggleTypeFields() {
+      const type = $('cType').value;
+      $('cTerm').disabled = type !== 'subscription';
+    }
+
+    function toggleDrawerTypeFields() {
+      const type = $('dType').value;
+      $('dTerm').disabled = type !== 'subscription';
+      $('dExpires').disabled = type !== 'subscription';
+    }
+
+    function clearCreate() {
+      $('cKey').value = '';
+      $('cPlan').value = 'pro';
+      $('cType').value = 'lifetime';
+      $('cTerm').value = 'monthly';
+      $('cTerm').disabled = true;
+      $('cDevices').value = '1';
+      $('cStatus').value = 'active';
+      $('cCustomer').value = '';
+      setAlert($('createAlert'), '', '');
+    }
+
+    function genKey() {
+      $('cKey').value = genKeyLocal();
+    }
+
+    async function createLicense() {
+      const key = normalizeKey($('cKey').value);
+      const plan = String($('cPlan').value || 'pro');
+      const type = String($('cType').value || 'subscription');
+      const term = String($('cTerm').value || 'monthly');
+      const devicesAllowed = Number($('cDevices').value || 1);
+      const status = String($('cStatus').value || 'active');
+      const customerName = String($('cCustomer').value || '').trim();
+
+      if (!validateKeyFormat(key)) {
+        setAlert($('createAlert'), 'error', 'Invalid license key format. Example: LVR34-ABCD-1234-EFGH');
+        return;
+      }
+      if (!Number.isFinite(devicesAllowed) || devicesAllowed < 1) {
+        setAlert($('createAlert'), 'error', 'devicesAllowed must be >= 1');
+        return;
+      }
+
+      const now = Date.now();
+      let expiresAt = null;
+      if (type === 'subscription') {
+        const days = term === 'yearly' ? 365 : 30;
+        expiresAt = new Date(now + days * 86400000);
+      }
+
+      const ref = doc(db, 'licenses', key);
+      const payload = {
+        key,
+        plan,
+        type,
+        term: type === 'subscription' ? term : null,
+        devicesAllowed,
+        activatedDevices: [],
+        createdAt: serverTimestamp(),
+        expiresAt: type === 'subscription' ? expiresAt : null,
+        status,
+        customerName: customerName || null,
+        customerId: null
+      };
+
+      try {
+        await setDoc(ref, payload);
+        setAlert($('createAlert'), 'success', 'License created');
+        await loadLicenses();
+      } catch (e) {
+        setAlert($('createAlert'), 'error', 'Failed to create license: ' + (e?.message || String(e)));
+      }
+    }
+
+    function openDrawer(key) {
+      const l = state.licenses.find((x) => x.id === key);
+      if (!l) return;
+      state.selected = l;
+      $('dKey').textContent = l.id;
+      $('dStatus').value = l.status || 'active';
+      $('dPlan').value = l.plan || 'pro';
+      $('dType').value = l.type || 'subscription';
+      $('dDevices').value = String(l.devicesAllowed ?? 1);
+      $('dTerm').value = l.term || 'monthly';
+
+      const expiresMs = l.expiresAt?.seconds ? l.expiresAt.seconds * 1000 : (typeof l.expiresAt === 'number' ? l.expiresAt : null);
+      $('dExpires').value = toDateTimeLocal(expiresMs);
+      $('dCustomerName').value = l.customerName || '';
+      $('dCustomerPhone').value = l.customerPhone || '';
+
+      const devs = Array.isArray(l.activatedDevices) ? l.activatedDevices : [];
+      $('dDevicesList').innerHTML = devs.length ? devs.map((d) => `<div><code>${d}</code></div>`).join('') : '<span class="muted">No devices activated</span>';
+      toggleDrawerTypeFields();
+      setAlert($('dAlert'), '', '');
+      $('overlay').classList.add('show');
+      $('drawer').classList.add('open');
+    }
+
+    function closeDrawer() {
+      $('overlay').classList.remove('show');
+      $('drawer').classList.remove('open');
+      state.selected = null;
+    }
+
+    async function saveDrawer() {
+      if (!state.selected) return;
+      const key = state.selected.id;
+      const status = $('dStatus').value;
+      const plan = String($('dPlan').value || 'pro');
+      const type = $('dType').value;
+      const devicesAllowed = Number($('dDevices').value || 1);
+      const term = String($('dTerm').value || 'monthly');
+      const expiresMs = fromDateTimeLocal($('dExpires').value);
+      const customerName = String($('dCustomerName').value || '').trim();
+      const customerPhone = String($('dCustomerPhone').value || '').trim();
+
+      const updates = {
+        status,
+        plan,
+        type,
+        devicesAllowed,
+        term: type === 'subscription' ? term : null,
+        expiresAt: type === 'subscription' ? (expiresMs ? new Date(expiresMs) : null) : null,
+        customerName: customerName || null,
+        customerPhone: customerPhone || null,
+        // customerId can be set by editing field via Firestore console or by extending UI.
+        updatedAt: serverTimestamp()
+      };
+
+      try {
+        await updateDoc(doc(db, 'licenses', key), updates);
+        setAlert($('dAlert'), 'success', 'Saved');
+        await loadLicenses();
+      } catch (e) {
+        setAlert($('dAlert'), 'error', 'Save failed: ' + (e?.message || String(e)));
+      }
+    }
+
+    async function disableDrawer() {
+      if (!state.selected) return;
+      try {
+        await updateDoc(doc(db, 'licenses', state.selected.id), { status: 'disabled', updatedAt: serverTimestamp() });
+        setAlert($('dAlert'), 'success', 'Disabled');
+        await loadLicenses();
+      } catch (e) {
+        setAlert($('dAlert'), 'error', 'Disable failed: ' + (e?.message || String(e)));
+      }
+    }
+
+    async function enableDrawer() {
+      if (!state.selected) return;
+      try {
+        await updateDoc(doc(db, 'licenses', state.selected.id), { status: 'active', updatedAt: serverTimestamp() });
+        setAlert($('dAlert'), 'success', 'Enabled');
+        await loadLicenses();
+      } catch (e) {
+        setAlert($('dAlert'), 'error', 'Enable failed: ' + (e?.message || String(e)));
+      }
+    }
+
+    async function refreshAll() {
+      await loadLicenses();
+    }
+
+    function renderCustomers() {
+      const q = String($('custQ').value || '').trim().toLowerCase();
+      const rows = state.customers.filter((c) => {
+        if (!q) return true;
+        const hay = [c.id, c.name, c.phone, c.email].filter(Boolean).join(' ').toLowerCase();
+        return hay.includes(q);
+      }).map((c) => {
+        const licenseCount = state.licenses.filter((l) => l.customerId === c.id).length;
+        return `
+          <tr>
+            <td><strong>${c.name || '—'}</strong><div class="muted small"><code>${c.id}</code></div></td>
+            <td>${c.phone || '—'}</td>
+            <td>${c.email || '—'}</td>
+            <td>${licenseCount}</td>
+            <td style="text-align:right;"><button class="btn secondary" onclick="editCustomer('${c.id}')">Edit</button></td>
+          </tr>
+        `;
+      }).join('');
+      $('custRows').innerHTML = rows || `<tr><td colspan="5" class="muted">No customers</td></tr>`;
+    }
+
+    function clearCustomer() {
+      $('custId').value = '';
+      $('custName').value = '';
+      $('custPhone').value = '';
+      $('custEmail').value = '';
+      $('custNotes').value = '';
+      setAlert($('custAlert'), '', '');
+    }
+
+    function editCustomer(id) {
+      const c = state.customers.find((x) => x.id === id);
+      if (!c) return;
+      $('custId').value = c.id;
+      $('custName').value = c.name || '';
+      $('custPhone').value = c.phone || '';
+      $('custEmail').value = c.email || '';
+      $('custNotes').value = c.notes || '';
+      setAlert($('custAlert'), '', '');
+    }
+
+    async function saveCustomer() {
+      const id = String($('custId').value || '').trim() || null;
+      const name = String($('custName').value || '').trim();
+      const phone = String($('custPhone').value || '').trim();
+      const email = String($('custEmail').value || '').trim();
+      const notes = String($('custNotes').value || '').trim();
+
+      if (!name) {
+        setAlert($('custAlert'), 'error', 'Customer name is required');
+        return;
+      }
+
+      try {
+        if (id) {
+          await setDoc(doc(db, 'customers', id), {
+            name,
+            phone: phone || null,
+            email: email || null,
+            notes: notes || null,
+            updatedAt: serverTimestamp()
+          }, { merge: true });
+        } else {
+          await addDoc(collection(db, 'customers'), {
+            name,
+            phone: phone || null,
+            email: email || null,
+            notes: notes || null,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp()
+          });
+        }
+        setAlert($('custAlert'), 'success', 'Customer saved');
+        await loadCustomers();
+      } catch (e) {
+        setAlert($('custAlert'), 'error', 'Save failed: ' + (e?.message || String(e)));
+      }
+    }
+
+    function renderActivations() {
+      const rows = state.activations.map((a) => {
+        const createdMs = a.createdAt?.seconds ? a.createdAt.seconds * 1000 : (typeof a.createdAt === 'number' ? a.createdAt : null);
+        const time = createdMs ? new Date(createdMs).toLocaleString() : '—';
+        return `
+          <tr>
+            <td>${time}</td>
+            <td><code>${a.licenseKey || '—'}</code></td>
+            <td><code>${a.machineId || '—'}</code></td>
+            <td>${String(a.action || 'activate')}</td>
+            <td>${a.appVersion ? `<span class="muted">v</span>${a.appVersion}` : '—'}</td>
+          </tr>
+        `;
+      }).join('');
+      $('actRows').innerHTML = rows || `<tr><td colspan="5" class="muted">No activations</td></tr>`;
+    }
+
+    async function login() {
+      const email = $('email').value;
+      const password = $('password').value;
+      $('btnLogin').disabled = true;
+      setAlert($('loginAlert'), '', '');
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (e) {
+        // Firebase often throws auth/network-request-failed here when requests are blocked by extensions/firewalls.
+        // Log full error to help diagnose (CORS, blocked endpoints, bad API key restrictions, etc.).
+        // eslint-disable-next-line no-console
+        console.error('[admin] login failed', e);
+        const code = e?.code ? ` (${e.code})` : '';
+        setAlert($('loginAlert'), 'error', 'Login failed' + code + ': ' + (e?.message || String(e)));
+      } finally {
+        $('btnLogin').disabled = false;
+      }
+    }
+
+    async function logout() {
+      await signOut(auth);
+    }
+
+    onAuthStateChanged(auth, async (user) => {
+      state.user = user;
+      if (!user) {
+        state.isAdmin = false;
+        $('login').style.display = 'flex';
+        $('app').style.display = 'none';
+        $('btnLogout').style.display = 'none';
+        $('loginHint').textContent = '';
+        return;
+      }
+
+      $('loginHint').textContent = 'Checking admin permissions...';
+      try {
+        state.isAdmin = await checkAdmin(user.uid);
+      } catch (e) {
+        state.isAdmin = false;
+      }
+
+      if (!state.isAdmin) {
+        $('login').style.display = 'flex';
+        $('app').style.display = 'none';
+        setAlert($('loginAlert'), 'error', 'Not authorized. Add your UID to Firestore: admins/<UID> { enabled: true }');
+        $('loginHint').textContent = 'UID: ' + user.uid;
+        return;
+      }
+
+      $('who').textContent = user.email + ' • UID: ' + user.uid;
+      $('login').style.display = 'none';
+      $('app').style.display = 'block';
+      toggleTypeFields();
+      await loadLicenses();
+    });
+
+    window.login = login;
+    window.logout = logout;
+    window.refreshAll = refreshAll;
+    window.renderTable = renderTable;
+    window.createLicense = createLicense;
+    window.clearCreate = clearCreate;
+    window.genKey = genKey;
+    window.openDrawer = openDrawer;
+    window.closeDrawer = closeDrawer;
+    window.saveDrawer = saveDrawer;
+    window.disableDrawer = disableDrawer;
+    window.enableDrawer = enableDrawer;
+    window.toggleTypeFields = toggleTypeFields;
+    window.toggleDrawerTypeFields = toggleDrawerTypeFields;
+    window.showTab = showTab;
+    window.saveCustomer = saveCustomer;
+    window.clearCustomer = clearCustomer;
+    window.renderCustomers = renderCustomers;
+    window.editCustomer = editCustomer;
+  </script>
+</body>
+</html>

@@ -1,0 +1,594 @@
+/*
+ * LA VIE EN ROSE 34 - Ultimate Splash Screen
+ * Premium Visual Experience for 8K+ Display
+ * Enhanced with AI Design Principles
+ */
+
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(900px 650px at 20% 40%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 55%),
+    radial-gradient(700px 520px at 80% 60%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+    var(--surface-0);
+  z-index: 9999;
+  overflow: hidden;
+  opacity: 0;
+  animation: splashBlackThenIn 4200ms var(--ease-smooth) 0ms 1 both;
+}
+
+@keyframes splashBlackThenIn {
+  0% { opacity: 0; }
+  7% { opacity: 0; }
+  18% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+.splash-screen::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--brand-gunmetal) 55%, transparent), transparent 70%),
+    var(--brand-art-url),
+    var(--brand-art-url-fallback);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 50% 40%;
+  background-blend-mode: overlay, soft-light, soft-light;
+  opacity: 0.38;
+  mask-image: radial-gradient(circle at 50% 45%, black 0%, black 45%, transparent 75%);
+}
+
+/* Animated Background - Ultimate */
+.splash-bg {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.cinema-noise {
+  position: absolute;
+  inset: -20%;
+  opacity: 0.10;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/></filter><rect width="200" height="200" filter="url(%23n)" opacity="0.5"/></svg>');
+  background-size: 200px 200px;
+  mix-blend-mode: overlay;
+  animation: cinemaNoiseMove 1.2s steps(2, end) infinite;
+}
+
+@keyframes cinemaNoiseMove {
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-4%, -6%, 0); }
+}
+
+.cinema-vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(0, 0, 0, 0.0) 0%, rgba(0, 0, 0, 0.06) 40%, rgba(0, 0, 0, 0.55) 78%, rgba(0, 0, 0, 0.78) 100%);
+}
+
+.light-emergence {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(260px 260px at 50% 48%, color-mix(in srgb, var(--accent) 18%, transparent), color-mix(in srgb, var(--color-secondary-500) 10%, transparent) 40%, transparent 70%),
+    radial-gradient(520px 520px at 50% 48%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 72%);
+  filter: blur(10px);
+  opacity: 0;
+  transform: translateZ(0) scale(0.95);
+  animation: lightEmerge 4200ms var(--ease-smooth) 0ms 1 both;
+}
+
+.light-rays {
+  position: absolute;
+  inset: 0;
+  background:
+    conic-gradient(from 180deg at 50% 48%, transparent 0deg, color-mix(in srgb, var(--color-secondary-500) 9%, transparent) 18deg, transparent 48deg, color-mix(in srgb, var(--accent) 9%, transparent) 92deg, transparent 135deg, color-mix(in srgb, var(--accent) 7%, transparent) 176deg, transparent 220deg, color-mix(in srgb, var(--color-secondary-500) 7%, transparent) 265deg, transparent 320deg, transparent 360deg);
+  filter: blur(12px);
+  opacity: 0;
+  mask-image: radial-gradient(circle at 50% 48%, black 0%, black 35%, transparent 68%);
+  animation: raysIn 4200ms var(--ease-smooth) 0ms 1 both;
+  transform: translateZ(0);
+}
+
+/* Ambient Glow Layers */
+.ambient-glow {
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 80% 50% at 20% 40%, color-mix(in srgb, var(--accent) 18%, transparent) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 40% at 80% 60%, color-mix(in srgb, var(--accent) 14%, transparent) 0%, transparent 50%),
+    radial-gradient(ellipse 100% 60% at 50% 100%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 40%);
+  animation: ambientPulse 8s var(--ease-smooth) infinite;
+}
+
+@keyframes ambientPulse {
+  0%, 100% { opacity: 0.8; }
+  50% { opacity: 1; }
+}
+
+.gradient-orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.4;
+  animation: float 20s infinite var(--ease-smooth);
+}
+
+.orb-1 {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 50%, transparent) 0%, color-mix(in srgb, var(--accent) 20%, transparent) 40%, transparent 70%);
+  top: -15%;
+  inset-inline-start: -10%;
+  animation-delay: 0s;
+}
+
+.orb-2 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-secondary-500) 40%, transparent) 0%, color-mix(in srgb, var(--color-secondary-500) 15%, transparent) 40%, transparent 70%);
+  bottom: -10%;
+  inset-inline-end: -5%;
+  animation-delay: -7s;
+}
+
+.orb-3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 26%, transparent) 0%, color-mix(in srgb, var(--accent) 10%, transparent) 40%, transparent 70%);
+  top: 40%;
+  inset-inline-start: 60%;
+  animation-delay: -14s;
+}
+
+/* Particle Field */
+.particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.particle {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: color-mix(in srgb, var(--accent) 60%, transparent);
+  border-radius: 50%;
+  animation: none;
+}
+
+.particle-rose {
+  background: radial-gradient(circle, color-mix(in srgb, var(--accent) 70%, transparent), transparent 70%);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.particle-gold {
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-secondary-500) 70%, transparent), transparent 70%);
+  box-shadow: 0 0 16px color-mix(in srgb, var(--color-secondary-500) 35%, transparent);
+}
+
+.particle:nth-child(1) { inset-inline-start: 10%; top: 20%; animation-delay: 0s; animation-duration: 20s; }
+.particle:nth-child(2) { inset-inline-start: 20%; top: 80%; animation-delay: -5s; animation-duration: 25s; }
+.particle:nth-child(3) { inset-inline-start: 30%; top: 40%; animation-delay: -10s; animation-duration: 18s; }
+.particle:nth-child(4) { inset-inline-start: 50%; top: 60%; animation-delay: -3s; animation-duration: 22s; }
+.particle:nth-child(5) { inset-inline-start: 70%; top: 30%; animation-delay: -8s; animation-duration: 19s; }
+.particle:nth-child(6) { inset-inline-start: 80%; top: 70%; animation-delay: -12s; animation-duration: 24s; }
+.particle:nth-child(7) { inset-inline-start: 90%; top: 50%; animation-delay: -2s; animation-duration: 21s; }
+.particle:nth-child(8) { inset-inline-start: 40%; top: 10%; animation-delay: -15s; animation-duration: 17s; }
+
+@keyframes particleFloat {
+  0% { transform: translateY(0) translateX(0); opacity: 0; }
+  10% { opacity: 0.6; }
+  90% { opacity: 0.6; }
+  100% { transform: translateY(-100vh) translateX(50px); opacity: 0; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(20px, -20px) scale(1.05); }
+  50% { transform: translate(-10px, 10px) scale(0.95); }
+  75% { transform: translate(30px, 20px) scale(1.02); }
+}
+
+/* Logo Container - Ultimate */
+.logo-container {
+  position: relative;
+  width: 280px;
+  height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Outer Glow Ring */
+.glow-ring-outer {
+  position: absolute;
+  inset: -30px;
+  border: 1px solid var(--border-soft);
+  border-radius: 50%;
+  animation: ringPulse 3s var(--ease-smooth) infinite;
+}
+
+@keyframes ringPulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.05); opacity: 0.8; }
+}
+
+/* Inner Glow Ring */
+.glow-ring {
+  position: absolute;
+  inset: -15px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  background: linear-gradient(135deg, 
+    color-mix(in srgb, var(--accent) 40%, transparent) 0%, 
+    transparent 30%, 
+    transparent 70%, 
+    color-mix(in srgb, var(--accent) 40%, transparent) 100%
+  );
+  mask: linear-gradient(var(--mask-solid) 0 0) content-box, linear-gradient(var(--mask-solid) 0 0);
+  mask-composite: exclude;
+  -webkit-mask-composite: xor;
+  padding: 2px;
+  animation: ringRotate 20s linear infinite;
+}
+
+@keyframes ringRotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.logo-wrapper {
+  position: relative;
+  z-index: 2;
+}
+
+.logo-shine {
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(120deg, transparent 0%, rgba(255, 255, 255, 0.0) 35%, rgba(255, 255, 255, 0.55) 46%, color-mix(in srgb, var(--color-secondary-500) 40%, transparent) 52%, rgba(255, 255, 255, 0.0) 62%, transparent 100%);
+  transform: translate3d(-55%, -35%, 0) rotate(12deg);
+  opacity: 0;
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  animation: shineSweep 2600ms cubic-bezier(0.16, 1, 0.3, 1) 1200ms infinite;
+}
+
+.logo-shine-unified {
+  inset: -55%;
+  animation: shineHero 5200ms cubic-bezier(0.16, 1, 0.3, 1) 0ms 1 both;
+}
+
+@keyframes shineHero {
+  0% { opacity: 0; transform: translate3d(-75%, -30%, 0) rotate(14deg); }
+  58% { opacity: 0; }
+  70% { opacity: 0.95; }
+  84% { opacity: 0.18; transform: translate3d(75%, 30%, 0) rotate(14deg); }
+  100% { opacity: 0; transform: translate3d(75%, 30%, 0) rotate(14deg); }
+}
+
+@keyframes shineSweep {
+  0% { opacity: 0; transform: translate3d(-65%, -35%, 0) rotate(14deg); }
+  18% { opacity: 0.85; }
+  40% { opacity: 0.35; }
+  70% { opacity: 0; transform: translate3d(65%, 35%, 0) rotate(14deg); }
+  100% { opacity: 0; transform: translate3d(65%, 35%, 0) rotate(14deg); }
+}
+
+.splash-logo {
+  width: 240px;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 0 40px color-mix(in srgb, var(--accent) 55%, transparent));
+  animation: logoGlow 3s var(--ease-smooth) infinite;
+}
+
+.splash-wordmark {
+  position: absolute;
+  inset-inline-start: 50%;
+  top: 50%;
+  width: min(460px, 78vw);
+  height: auto;
+  transform: translate3d(-50%, 56px, 0);
+  filter:
+    drop-shadow(0 18px 42px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 24px color-mix(in srgb, var(--accent) 16%, transparent))
+    drop-shadow(0 0 18px color-mix(in srgb, var(--color-secondary-500) 12%, transparent));
+  pointer-events: none;
+}
+
+@keyframes logoGlow {
+  0%, 100% { filter: drop-shadow(0 0 30px color-mix(in srgb, var(--accent) 45%, transparent)); }
+  50% { filter: drop-shadow(0 0 50px color-mix(in srgb, var(--accent) 70%, transparent)); }
+}
+
+/* Sparkles - Premium */
+.sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.sparkle {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: linear-gradient(135deg, var(--accent), color-mix(in srgb, var(--accent) 25%, white));
+  border-radius: 50%;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 80%, transparent), 0 0 20px color-mix(in srgb, var(--accent) 40%, transparent);
+  animation: none;
+}
+
+.sparkle::before,
+.sparkle::after {
+  content: '';
+  position: absolute;
+  background: inherit;
+  border-radius: inherit;
+}
+
+.sparkle::before {
+  width: 24px;
+  height: 2px;
+  top: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 60%, transparent), transparent);
+}
+
+.sparkle::after {
+  width: 2px;
+  height: 24px;
+  top: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  background: linear-gradient(180deg, transparent, color-mix(in srgb, var(--accent) 60%, transparent), transparent);
+}
+
+.sparkle:nth-child(1) { top: 10%; inset-inline-start: 20%; animation-delay: 0s; }
+.sparkle:nth-child(2) { top: 20%; inset-inline-end: 15%; animation-delay: 0.5s; }
+.sparkle:nth-child(3) { bottom: 25%; inset-inline-start: 10%; animation-delay: 1s; }
+.sparkle:nth-child(4) { bottom: 15%; inset-inline-end: 20%; animation-delay: 1.5s; }
+.sparkle:nth-child(5) { top: 40%; inset-inline-start: 5%; animation-delay: 0.3s; }
+.sparkle:nth-child(6) { top: 35%; inset-inline-end: 8%; animation-delay: 0.8s; }
+.sparkle:nth-child(7) { bottom: 40%; inset-inline-start: 8%; animation-delay: 1.2s; }
+.sparkle:nth-child(8) { bottom: 35%; inset-inline-end: 5%; animation-delay: 1.7s; }
+
+@keyframes sparkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+/* Brand Text - Ultimate */
+.brand-text {
+  text-align: center;
+  margin-top: 2.5rem;
+  z-index: 2;
+}
+
+.brand-wordmark {
+  width: min(560px, 84vw);
+  height: auto;
+  object-fit: contain;
+  filter:
+    drop-shadow(0 14px 44px rgba(0, 0, 0, 0.55))
+    drop-shadow(0 0 26px color-mix(in srgb, var(--accent) 16%, transparent))
+    drop-shadow(0 0 20px color-mix(in srgb, var(--color-secondary-500) 12%, transparent));
+  opacity: 0.98;
+}
+
+.brand-name {
+  font-family: 'Playfair Display', serif;
+  font-size: 2.5rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.text-rose-gold {
+  background: linear-gradient(
+    135deg,
+    var(--accent) 0%,
+    color-mix(in srgb, var(--accent) 35%, white) 30%,
+    color-mix(in srgb, var(--accent) 22%, white) 50%,
+    color-mix(in srgb, var(--accent) 35%, white) 70%,
+    var(--accent) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerText 4s var(--ease-smooth) infinite;
+}
+
+@keyframes shimmerText {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.brand-number {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.2em;
+  color: var(--fg-subtle);
+  font-weight: 300;
+}
+
+.brand-tagline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1rem;
+  color: var(--fg-subtle);
+  letter-spacing: 0.2em;
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+
+/* Progress Bar - Premium */
+.progress-container {
+  position: absolute;
+  bottom: 140px;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  z-index: 2;
+}
+
+.progress-track {
+  width: 100%;
+  height: 3px;
+  background: color-mix(in srgb, var(--fg) 10%, transparent);
+  border-radius: 3px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-track::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--accent) 12%, transparent), transparent);
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 25%, white));
+  border-radius: 3px;
+  box-shadow: 0 0 10px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.progress-text {
+  font-size: 0.75rem;
+  color: var(--fg-subtle);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  min-width: 40px;
+}
+
+/* Loading Text */
+.loading-text {
+  position: absolute;
+  bottom: 90px;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.875rem;
+  color: var(--fg-muted);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.loading-dots::after {
+  content: '';
+  animation: dots 1.5s steps(4, end) infinite;
+}
+
+@keyframes dots {
+  0% { content: ''; }
+  25% { content: '.'; }
+  50% { content: '..'; }
+  75% { content: '...'; }
+  100% { content: ''; }
+}
+
+/* Corner Accents */
+.corner-accent {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border: 1px solid var(--border-soft);
+  pointer-events: none;
+}
+
+.corner-accent-tl {
+  top: 30px;
+  inset-inline-start: 30px;
+  border-inline-end: none;
+  border-bottom: none;
+}
+
+.corner-accent-tr {
+  top: 30px;
+  inset-inline-end: 30px;
+  border-inline-start: none;
+  border-bottom: none;
+}
+
+.corner-accent-bl {
+  bottom: 30px;
+  inset-inline-start: 30px;
+  border-inline-end: none;
+  border-top: none;
+}
+
+.corner-accent-br {
+  bottom: 30px;
+  inset-inline-end: 30px;
+  border-inline-start: none;
+  border-top: none;
+}
+
+/* Responsive - Ultimate */
+@media (max-width: 768px) {
+  .logo-container {
+    width: 160px;
+    height: 160px;
+  }
+  
+  .splash-logo {
+    width: 130px;
+  }
+  
+  .brand-name {
+    font-size: 2rem;
+  }
+  
+  .brand-tagline {
+    font-size: 0.9rem;
+  }
+  
+  .progress-container {
+    width: 180px;
+    bottom: 120px;
+  }
+  
+  .corner-accent {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-container {
+    width: 130px;
+    height: 130px;
+  }
+  
+  .splash-logo {
+    width: 100px;
+  }
+  
+  .brand-name {
+    font-size: 1.5rem;
+  }
+  
+  .brand-tagline {
+    font-size: 0.8rem;
+    letter-spacing: 0.2em;
+  }
+}

@@ -1,0 +1,128 @@
+.lux-titlebar {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-fixed);
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-inline: var(--space-3);
+  border-bottom: 1px solid var(--glass-border);
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--surface-1) 68%, transparent),
+      color-mix(in srgb, var(--surface-2) 42%, transparent)
+    );
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  box-shadow: var(--shadow-inset);
+}
+
+.lux-titlebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(900px 140px at 18% 0%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 62%),
+    radial-gradient(700px 120px at 86% 0%, color-mix(in srgb, var(--accent-strong) 12%, transparent), transparent 60%),
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--pearl-white) 7%, transparent), transparent);
+  opacity: 0.9;
+  mask-image: linear-gradient(90deg, transparent 0%, black 18%, black 82%, transparent 100%);
+}
+
+.lux-titlebar__drag {
+  position: absolute;
+  inset: 0;
+  -webkit-app-region: drag;
+  pointer-events: none;
+}
+
+.lux-titlebar__brand {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  -webkit-app-region: drag;
+}
+
+.lux-titlebar__logo {
+  width: 26px;
+  height: 26px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--gradient-primary);
+  box-shadow: var(--shadow-glow-primary-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lux-titlebar__logo img {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+}
+
+.lux-titlebar__title {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lux-titlebar__controls {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  -webkit-app-region: no-drag;
+}
+
+.lux-titlebar__btn {
+  width: 34px;
+  height: 28px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid color-mix(in srgb, var(--glass-border) 80%, transparent);
+  background: color-mix(in srgb, var(--surface-1) 68%, transparent);
+  color: var(--fg-muted);
+  transition:
+    background var(--duration-fast) var(--ease-smooth),
+    border-color var(--duration-fast) var(--ease-smooth),
+    color var(--duration-fast) var(--ease-smooth),
+    box-shadow var(--duration-fast) var(--ease-smooth);
+}
+
+.lux-titlebar__btn--feature {
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent) 34%, transparent),
+      color-mix(in srgb, var(--surface-1) 62%, transparent)
+    );
+  border-color: color-mix(in srgb, var(--accent) 26%, transparent);
+  color: var(--fg);
+}
+
+.lux-titlebar__btn:hover {
+  background: color-mix(in srgb, var(--surface-2) 78%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+  color: var(--fg);
+  box-shadow: var(--shadow-control);
+}
+
+.lux-titlebar__btn--danger:hover {
+  border-color: color-mix(in srgb, var(--accent-strong) 28%, transparent);
+  background: color-mix(in srgb, var(--accent-strong) 16%, transparent);
+}

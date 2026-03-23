@@ -1,0 +1,109 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admins/$(request.auth.uid)).data.enabled == true;
+    }
+
+    function isOwnUid(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function onlyAllowedFieldsChanged(allowed) {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly(allowed);
+    }
+
+    function isAppendOnlyWithinDeviceLimit() {
+      return request.resource.data.activatedDevices is list
+        && resource.data.activatedDevices is list
+        && request.resource.data.activatedDevices.size() == resource.data.activatedDevices.size() + 1
+        && request.resource.data.activatedDevices.hasAll(resource.data.activatedDevices)
+        && request.resource.data.activatedDevices.size() <= resource.data.devicesAllowed;
+    }
+
+    // ── Admins allowlist ──────────────────────────────────────────────────
+    match /admins/{uid} {
+      // A signed-in user can only read their OWN admin doc (needed by isAdmin())
+      allow get: if isOwnUid(uid);
+      allow list: if false;
+      allow write: if false;  // Only manageable via Firebase Console / Admin SDK
+    }
+
+    // ── Licenses ──────────────────────────────────────────────────────────
+    match /licenses/{licenseKey} {
+      // Users can only read their own activated license (must match machineId in doc)
+      allow get: if isSignedIn();  // activation check needs this
+      allow list: if isAdmin();
+
+      // Non-admin activation: can only add their device to activatedDevices list
+      allow update: if isSignedIn()
+        && !isAdmin()
+        && resource.data.status == 'active'
+        && onlyAllowedFieldsChanged(['activatedDevices', 'lastActivationAt'])
+        && isAppendOnlyWithinDeviceLimit();
+
+      // Full control for admins
+      allow create, update, delete: if isAdmin();
+    }
+
+    // ── Users (app user profiles & roles) ─────────────────────────────────
+    match /users/{uid} {
+      // Users can read/write their own profile
+      allow get: if isOwnUid(uid) || isAdmin();
+      allow update: if isOwnUid(uid) && onlyAllowedFieldsChanged(['displayName', 'updatedAt', 'lastLoginAt']);
+      allow list, create, delete: if isAdmin();
+      // Admin can update any field including roleId
+      allow update: if isAdmin();
+    }
+
+    // ── Roles (permission definitions) ────────────────────────────────────
+    match /roles/{roleId} {
+      allow read: if isSignedIn();  // Backend reads this to check permissions
+      allow write: if isAdmin();
+    }
+
+    // ── Audit logs ────────────────────────────────────────────────────────
+    match /logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();  // Backend writes audit logs
+      allow update, delete: if false;  // Logs are immutable
+    }
+
+    // ── Customers (licensing admin panel) ─────────────────────────────────
+    match /customers/{customerId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ── Devices (machine registration) ────────────────────────────────────
+    match /devices/{machineId} {
+      allow read: if isAdmin();
+      // Signed-in users can register/update their own device only
+      allow create: if isSignedIn() && request.resource.data.machineId == machineId;
+      allow update: if isSignedIn()
+        && resource.data.keys().hasAll(['machineId'])
+        && resource.data.machineId == machineId
+        && request.auth.uid == resource.data.uid;
+      allow delete: if isAdmin();
+    }
+
+    // ── Activations (immutable activation records) ────────────────────────
+    match /activations/{activationId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
+
+    // ── Default deny ─────────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

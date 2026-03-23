@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>La Vie En Rose 34</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="splash" id="splash">
+      <div class="bg">
+        <div class="noise" aria-hidden="true"></div>
+        <div class="vignette" aria-hidden="true"></div>
+        <div class="light-emerge" aria-hidden="true"></div>
+        <div class="rays" aria-hidden="true"></div>
+        <div class="fog fog-back" aria-hidden="true"></div>
+        <div class="fog fog-front" aria-hidden="true"></div>
+      </div>
+
+      <div class="stage" aria-hidden="false">
+        <div class="particles" id="particles" aria-hidden="true"></div>
+
+        <div class="logo-wrap" id="logoWrap">
+          <div class="logo-glow" aria-hidden="true"></div>
+          <div class="logo-outer" aria-hidden="true"></div>
+          <div class="logo-inner" aria-hidden="true"></div>
+
+          <div class="logo" id="logo" aria-label="La Vie En Rose 34">
+            <canvas id="roseCanvas" class="rose-canvas" width="640" height="640" aria-hidden="true"></canvas>
+            <img id="logoImg" class="rose-img" alt="" />
+            <div class="shine unified" id="unifiedShine" aria-hidden="true"></div>
+          </div>
+
+          <!-- Wordmark (LVR34_0.png) shown below the logo badge -->
+          <img id="wordmarkImg" class="wordmark" alt="" />
+        </div>
+      </div>
+    </div>
+
+    <script src="./renderer.js"></script>
+  </body>
+</html>

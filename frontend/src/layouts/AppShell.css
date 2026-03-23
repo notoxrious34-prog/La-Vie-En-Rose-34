@@ -1,0 +1,530 @@
+/*
+ * LA VIE EN ROSE 34 - Premium AppShell Sidebar
+ * Unified Design System - Global Fashion Software
+ */
+
+/* =====================================================
+  SIDEBAR HEADER - Brand Integration
+  ===================================================== */
+
+:root {
+  --sidebar-w: 260px;
+  --sidebar-w-collapsed: 72px;
+}
+
+.sidebar {
+  width: var(--sidebar-w);
+}
+
+.sidebar.sidebar-collapsed {
+  width: var(--sidebar-w-collapsed);
+}
+
+.app-shell-root {
+  background: var(--surface-0);
+}
+
+.app-shell-content {
+  color: var(--fg);
+}
+
+.lux-brand-surface {
+  position: relative;
+}
+
+.lux-brand-surface::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--brand-gunmetal) 32%, transparent), transparent 70%),
+    var(--brand-art-url),
+    var(--brand-art-url-fallback),
+    radial-gradient(900px 650px at 15% 18%, color-mix(in srgb, var(--brand-filigree-glow) 55%, transparent), transparent 60%),
+    radial-gradient(850px 680px at 85% 80%, color-mix(in srgb, var(--brand-velvet-glow) 60%, transparent), transparent 62%),
+    repeating-radial-gradient(circle at 50% 40%,
+      color-mix(in srgb, var(--brand-champagne) 6%, transparent) 0 2px,
+      transparent 2px 10px);
+  opacity: 0.65;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: 50% 35%;
+  background-blend-mode: overlay, soft-light, soft-light, normal, normal, normal;
+  mask-image: radial-gradient(circle at 50% 40%, black 0%, black 55%, transparent 80%);
+}
+
+.lux-brand-surface > * {
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-surface {
+  background: var(--glass-bg);
+  border-color: var(--glass-border);
+  box-shadow: var(--shadow-surface);
+  border-inline-end: 1px solid var(--glass-border);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar-logo-wrapper {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  background: var(--gradient-primary);
+  box-shadow: var(--shadow-glow-primary-sm);
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+.sidebar-logo-wrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-glow-primary);
+}
+
+.sidebar-logo-img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, black 28%, transparent));
+}
+
+.brand-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.brand-name {
+  font-family: var(--font-display);
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.brand-subtitle {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  letter-spacing: var(--tracking-wide);
+}
+
+/* =====================================================
+   NAVIGATION - Premium Styling
+   ===================================================== */
+
+.nav-container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  transition: all var(--duration-normal) var(--ease-smooth);
+  position: relative;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--glass-bg) 55%, transparent);
+  border: 1px solid color-mix(in srgb, var(--glass-border) 60%, transparent);
+  box-shadow: var(--shadow-inset);
+  -webkit-backdrop-filter: var(--blur-md);
+  backdrop-filter: var(--blur-md);
+}
+
+.nav-item::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-smooth);
+  border-radius: 0 2px 2px 0;
+}
+
+.nav-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(110% 70% at 20% 0%, color-mix(in srgb, var(--accent) 18%, transparent), transparent 55%),
+    radial-gradient(120% 70% at 82% 22%, color-mix(in srgb, var(--accent-strong) 14%, transparent), transparent 62%),
+    radial-gradient(140% 90% at 55% 100%, color-mix(in srgb, var(--accent-glow, transparent) 40%, transparent), transparent 64%),
+    linear-gradient(90deg, transparent, color-mix(in srgb, var(--fg) 10%, transparent), transparent);
+  opacity: 0;
+  transform: translateX(-12%);
+  transition: opacity var(--duration-normal) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth);
+  pointer-events: none;
+  mask-image: linear-gradient(90deg, transparent 0%, black 18%, black 82%, transparent 100%);
+}
+
+.nav-item:hover {
+  background: color-mix(in srgb, var(--glass-bg) 72%, transparent);
+  color: var(--text-primary);
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+  box-shadow: var(--shadow-control);
+}
+
+.nav-item:hover::after {
+  opacity: 1;
+  transform: translateX(0%);
+}
+
+.nav-item:hover::before {
+  opacity: 0.5;
+}
+
+.nav-item.active {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 18%, transparent) 0%, color-mix(in srgb, var(--glass-bg) 78%, transparent) 100%);
+  color: var(--fg);
+  border-color: color-mix(in srgb, var(--accent) 34%, transparent);
+  box-shadow: var(--shadow-control-hover), 0 0 0 1px color-mix(in srgb, var(--accent-strong) 16%, transparent);
+}
+
+.nav-item.active::before {
+  opacity: 1;
+}
+
+.nav-icon {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: var(--bg-tertiary);
+  transition: all var(--duration-normal) var(--ease-smooth);
+  border: 1px solid color-mix(in srgb, var(--border-soft) 90%, transparent);
+  box-shadow: var(--shadow-inset);
+}
+
+.nav-item:hover .nav-icon {
+  background: color-mix(in srgb, var(--surface-2) 82%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.nav-item.active .nav-icon {
+  background: var(--gradient-primary);
+  color: var(--on-accent);
+  border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  box-shadow: var(--shadow-glow-primary-sm), var(--shadow-inset);
+}
+
+/* =====================================================
+   SIDEBAR FOOTER - Actions
+   ===================================================== */
+
+.sidebar-footer {
+  padding: var(--space-4);
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.sidebar-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: var(--font-medium);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  transition: all var(--duration-normal) var(--ease-smooth);
+  cursor: pointer;
+}
+
+.sidebar-action:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border-color: var(--color-primary-500);
+}
+
+/* =====================================================
+   LEGACY SUPPORT - Keep existing class names
+   ===================================================== */
+
+/* Luxury Logo Small - Sidebar */
+.luxury-logo-small {
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 16%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 8%, transparent) 50%,
+    color-mix(in srgb, var(--accent) 16%, transparent) 100%
+  );
+  background-size: 200% 100%;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  transition: all var(--duration-slow) var(--ease-smooth);
+  position: relative;
+  overflow: hidden;
+}
+
+.luxury-logo-small::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--fg) 12%, transparent),
+    transparent
+  );
+  transform: translateX(-100%);
+  transition: transform var(--duration-slower) var(--ease-smooth);
+}
+
+.luxury-logo-small:hover {
+  border-color: color-mix(in srgb, var(--accent) 52%, transparent);
+  box-shadow: var(--shadow-glow-primary-sm), 0 4px 20px color-mix(in srgb, black 28%, transparent);
+  transform: translateY(-2px);
+  background-position: 100% 0;
+}
+
+.luxury-logo-small:hover::before {
+  transform: translateX(100%);
+}
+
+.luxury-logo-small .sidebar-logo-img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 45%, transparent));
+  transition: filter var(--duration-normal) var(--ease-smooth);
+}
+
+.luxury-logo-small:hover .sidebar-logo-img {
+  filter: drop-shadow(0 0 12px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+
+/* Brand Name Sidebar */
+.brand-name-sidebar {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: var(--tracking-ultra-wide);
+  text-transform: uppercase;
+  background: var(--gradient-primary-shimmer);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmerText 4s var(--ease-smooth) infinite;
+}
+
+@keyframes shimmerText {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.user-name-sidebar {
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  color: var(--text-secondary);
+  margin-top: 2px;
+  transition: color var(--duration-normal) var(--ease-smooth);
+}
+
+/* Navigation Items */
+.luxury-nav-item {
+  position: relative;
+  overflow: hidden;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+.luxury-nav-item::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--gradient-primary);
+  opacity: 0;
+  transition: opacity var(--duration-normal) var(--ease-smooth);
+  border-radius: 0 2px 2px 0;
+}
+
+.luxury-nav-item::after {
+  content: '';
+  position: absolute;
+  inset-inline-end: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-inline-end: 4px solid var(--color-primary-500);
+  opacity: 0;
+  transition: all var(--duration-normal) var(--ease-smooth);
+}
+
+.luxury-nav-item:hover::before,
+.luxury-nav-item.active::before {
+  opacity: 1;
+}
+
+.luxury-nav-item:hover::after,
+.luxury-nav-item.active::after {
+  opacity: 1;
+  inset-inline-end: -4px;
+}
+
+/* =====================================================
+   WATERMARK & BACKGROUND EFFECTS
+   ===================================================== */
+
+.luxury-watermark {
+  position: relative;
+}
+
+.luxury-watermark::before {
+  content: '';
+  position: fixed;
+  top: 50%;
+  inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  width: 900px;
+  height: 900px;
+  background-image: var(--brand-mark-url), var(--brand-mark-url-fallback);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.015;
+  pointer-events: none;
+  z-index: 0;
+  filter: grayscale(100%) blur(0.5px);
+  animation: watermarkPulse 8s var(--ease-smooth) infinite;
+}
+
+@keyframes watermarkPulse {
+  0%, 100% { opacity: 0.015; transform: translate(-50%, -50%) scale(1); }
+  50% { opacity: 0.025; transform: translate(-50%, -50%) scale(1.02); }
+}
+
+/* =====================================================
+   SCROLLBAR STYLING
+   ===================================================== */
+
+aside ::-webkit-scrollbar {
+  width: 6px;
+}
+
+aside ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+aside ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 32%, transparent), color-mix(in srgb, var(--accent) 12%, transparent));
+  border-radius: var(--radius-full);
+  border: 1px solid color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+aside ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 52%, transparent), color-mix(in srgb, var(--accent) 32%, transparent));
+}
+
+/* =====================================================
+   SIDEBAR BACKGROUND
+   ===================================================== */
+
+.sidebar-luxury-bg {
+  background: linear-gradient(180deg, var(--dark-surface-1) 0%, var(--dark-surface-2) 50%, var(--dark-surface-1) 100%);
+  position: relative;
+}
+
+.sidebar-luxury-bg::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: 
+    radial-gradient(ellipse 100% 30% at 0% 0%, color-mix(in srgb, var(--accent) 6%, transparent) 0%, transparent 50%),
+    radial-gradient(ellipse 80% 20% at 100% 100%, color-mix(in srgb, var(--color-secondary-500) 4%, transparent) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Sidebar Divider */
+.sidebar-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border-soft), transparent);
+  margin: var(--space-4) 0;
+}
+
+/* User Avatar */
+.user-avatar-luxury {
+  position: relative;
+  border: 2px solid color-mix(in srgb, var(--accent) 32%, transparent);
+  border-radius: 50%;
+  padding: 2px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 12%, transparent), transparent);
+}
+
+.user-avatar-luxury::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1px solid var(--border-soft);
+  pointer-events: none;
+}
+
+/* =====================================================
+   THEME OVERRIDES
+   ===================================================== */
+
+[data-theme='dark'] .luxury-logo-small {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 22%, transparent) 0%,
+    color-mix(in srgb, var(--surface-1) 92%, transparent) 50%,
+    color-mix(in srgb, var(--accent) 22%, transparent) 100%
+  );
+  border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+[data-theme='light'] .luxury-logo-small {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--accent) 12%, transparent) 0%,
+    color-mix(in srgb, var(--surface-1) 92%, transparent) 50%,
+    color-mix(in srgb, var(--accent) 12%, transparent) 100%
+  );
+  border-color: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+[data-theme='light'] .sidebar-luxury-bg {
+  background: linear-gradient(180deg, var(--light-surface-0) 0%, var(--light-surface-1) 50%, var(--light-surface-0) 100%);
+}

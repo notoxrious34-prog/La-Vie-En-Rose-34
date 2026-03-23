@@ -1,0 +1,98 @@
+name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+            frontend/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install backend dependencies
+        run: npm ci --prefix backend
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix frontend
+
+      - name: Read version
+        id: pkg
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          "version=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Create tag (v${{ steps.pkg.outputs.version }})
+        shell: pwsh
+        run: |
+          Write-Host "Skipping git tag push in code repo. Tag will be created in the public updates repo by the release step."
+
+      - name: Build (backend + frontend + installer)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          # Prevent JavaScript heap out-of-memory during tsc + vite + electron-builder.
+          # Settings.tsx (2034 lines) + POS.tsx (1132 lines) push default 512MB heap over limit.
+          NODE_OPTIONS: "--max-old-space-size=4096"
+          # JWT secret must be set in repo secrets for production builds
+          LVER_JWT_SECRET: ${{ secrets.LVER_JWT_SECRET }}
+          # Firebase service account for production (optional)
+          FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          npm run build:backend
+          npm run build:frontend
+          npm run gen:icons
+          npx electron-builder --win --publish never
+
+      - name: Upload build debug artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-debug
+          path: |
+            dist/builder-debug.yml
+            dist/builder-effective-config.yaml
+
+      - name: Create GitHub Release and upload artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          repository: notoxrious34-prog/La-Vie-En-Rose-34
+          token: ${{ secrets.UPDATES_GH_TOKEN }}
+          target_commitish: main
+          tag_name: v${{ steps.pkg.outputs.version }}
+          name: v${{ steps.pkg.outputs.version }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          files: |
+            dist/latest.yml
+            dist/*.blockmap
+            dist/*Setup*.exe
