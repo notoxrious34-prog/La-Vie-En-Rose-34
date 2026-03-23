@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: write
+  releases: write
 
 concurrency:
   group: release-${{ github.ref }}
@@ -27,7 +28,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
           cache-dependency-path: |
             package-lock.json
@@ -57,20 +58,31 @@ jobs:
 
       - name: Build (backend + frontend + installer)
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
-          # Prevent JavaScript heap out-of-memory during tsc + vite + electron-builder.
-          # Settings.tsx (2034 lines) + POS.tsx (1132 lines) push default 512MB heap over limit.
           NODE_OPTIONS: "--max-old-space-size=4096"
-          # JWT secret must be set in repo secrets for production builds
           LVER_JWT_SECRET: ${{ secrets.LVER_JWT_SECRET }}
-          # Firebase service account for production (optional)
           FIREBASE_SERVICE_ACCOUNT_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_JSON }}
         run: |
           npm run build:backend
           npm run build:frontend
           npm run gen:icons
           npx electron-builder --win --publish never
+
+      - name: Verify build artifacts
+        shell: pwsh
+        run: |
+          if (!(Test-Path "dist")) {
+            Write-Error "Build directory not found"
+            exit 1
+          }
+          $files = Get-ChildItem "dist\*.exe" -ErrorAction SilentlyContinue
+          if ($files.Count -eq 0) {
+            Write-Error "No installer files found in dist directory"
+            exit 1
+          }
+          Write-Host "Found installer files:"
+          $files | ForEach-Object { Write-Host "  $($_.Name)" }
 
       - name: Upload build debug artifacts (on failure)
         if: failure()
@@ -80,12 +92,14 @@ jobs:
           path: |
             dist/builder-debug.yml
             dist/builder-effective-config.yaml
+            dist/latest.yml
 
       - name: Create GitHub Release and upload artifacts
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           repository: notoxrious34-prog/La-Vie-En-Rose-34
-          token: ${{ secrets.UPDATES_GH_TOKEN }}
           target_commitish: main
           tag_name: v${{ steps.pkg.outputs.version }}
           name: v${{ steps.pkg.outputs.version }}
@@ -96,3 +110,4 @@ jobs:
             dist/latest.yml
             dist/*.blockmap
             dist/*Setup*.exe
+            dist/*.exe
