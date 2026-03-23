@@ -62,6 +62,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       const handler = (_event, payload) => callback(payload);
       ipcRenderer.on('update:status', handler);
       return () => ipcRenderer.removeListener('update:status', handler);
-    }
+    },
+    requestStatus: () => ipcRenderer.send('update:status-request'),
+    downloadUpdate: () => ipcRenderer.send('update:download')
   }
 });

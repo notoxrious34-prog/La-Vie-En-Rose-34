@@ -42,7 +42,7 @@
     "to-ico": "^1.1.5"
   },
   "build": {
-    "appId": "com.lavieenrose.pos",
+    "appId": "com.lavieenrose.app",
     "productName": "La Vie En Rose 34",
     "copyright": "Copyright © 2024 La Vie En Rose 34",
     "asar": true,

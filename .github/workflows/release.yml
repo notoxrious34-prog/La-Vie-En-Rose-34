@@ -35,14 +35,11 @@ jobs:
             backend/package-lock.json
             frontend/package-lock.json
 
-      - name: Install root dependencies
-        run: npm ci
-
-      - name: Install backend dependencies
-        run: npm ci --prefix backend
-
-      - name: Install frontend dependencies
-        run: npm ci --prefix frontend
+      - name: Install dependencies
+        run: |
+          npm install
+          npm ci --prefix backend
+          npm ci --prefix frontend
 
       - name: Read version
         id: pkg
@@ -51,12 +48,7 @@ jobs:
           $version = node -p "require('./package.json').version"
           "version=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Create tag (v${{ steps.pkg.outputs.version }})
-        shell: pwsh
-        run: |
-          Write-Host "Skipping git tag push in code repo. Tag will be created in the public updates repo by the release step."
-
-      - name: Build (backend + frontend + installer)
+      - name: Build application
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
@@ -67,34 +59,9 @@ jobs:
           npm run build:backend
           npm run build:frontend
           npm run gen:icons
-          npx electron-builder --win --publish never
+          npx electron-builder --win --publish always
 
-      - name: Verify build artifacts
-        shell: pwsh
-        run: |
-          if (!(Test-Path "dist")) {
-            Write-Error "Build directory not found"
-            exit 1
-          }
-          $files = Get-ChildItem "dist\*.exe" -ErrorAction SilentlyContinue
-          if ($files.Count -eq 0) {
-            Write-Error "No installer files found in dist directory"
-            exit 1
-          }
-          Write-Host "Found installer files:"
-          $files | ForEach-Object { Write-Host "  $($_.Name)" }
-
-      - name: Upload build debug artifacts (on failure)
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-debug
-          path: |
-            dist/builder-debug.yml
-            dist/builder-effective-config.yaml
-            dist/latest.yml
-
-      - name: Create GitHub Release and upload artifacts
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

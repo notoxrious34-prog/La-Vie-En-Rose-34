@@ -5,6 +5,7 @@ import { RequireAuth } from './RequireAuth';
 import { RequireLicense } from './RequireLicense';
 import { SplashScreen } from './components/SplashScreen';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { UpdateNotification } from './components/UpdateNotification';
 import { ToastHost } from './components/ui/ToastHost';
 import { Skeleton } from './components/ui/Skeleton';
 import { useToasts } from './lib/toast';
@@ -30,26 +31,21 @@ const PublicOrderStatusPage = lazy(() =>
 const OrderTrackingPage = lazy(() => import('./pages/OrderTracking').then((m) => ({ default: m.OrderTrackingPage })));
 const ActivationPage = lazy(() => import('./pages/Activation').then((m) => ({ default: m.ActivationPage })));
 
-const PageLoader = () => (
-  <div
-    className="flex h-screen w-full items-center justify-center"
-    style={{
-      background:
-        'radial-gradient(900px 650px at 15% 20%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%), radial-gradient(800px 600px at 85% 75%, color-mix(in srgb, var(--color-secondary-500) 10%, transparent), transparent 65%), var(--surface-0)',
-    }}
-  >
-    <div className="flex flex-col items-center gap-5">
-      <Skeleton className="h-20 w-20 rounded-full" radius="3xl" />
-      <div className="flex flex-col items-center gap-2">
-        <Skeleton className="h-3 w-44" radius="xl" />
-        <Skeleton className="h-3 w-28" radius="xl" />
+function PageLoader() {
+  return (
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <Skeleton className="h-4 w-32 mx-auto" radius="xl" />
+        <Skeleton className="h-3 w-24 mx-auto mt-2" radius="xl" />
       </div>
     </div>
-  </div>
-);
+  );
+}
 
 function AppInner() {
   const [showSplash, setShowSplash] = useState(true);
+  const [showUpdate, setShowUpdate] = useState(false);
   const { items, closeToast } = useToasts();
   const cleanup = createCleanup();
 
@@ -57,6 +53,7 @@ function AppInner() {
   const debouncedHideSplash = useDebounce(() => {
     setShowSplash(false);
     cleanup.execute(); // Cleanup when app is ready
+    setShowUpdate(true); // Show update notification after app loads
   }, 100);
 
   return (
@@ -64,50 +61,44 @@ function AppInner() {
       <ToastHost items={items} onClose={closeToast} />
       {showSplash && <SplashScreen onComplete={debouncedHideSplash} duration={3000} />}
       {!showSplash && (
-        <HashRouter>
-          <Routes>
-            <Route
-              path="/activate"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <ActivationPage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/login"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <LoginPage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/public/orders/:orderNumber"
-              element={
-                <Suspense fallback={<PageLoader />}>
-                  <PublicOrderStatusPage />
-                </Suspense>
-              }
-            />
-            <Route
-              path="/track/:orderNumber"
+        <>
+          {showUpdate && <UpdateNotification onClose={() => setShowUpdate(false)} />}
+          <HashRouter>
+            <Routes>
+              <Route
+                path="/login"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <LoginPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/public/orders/:orderNumber"
+                element={
+                  <Suspense fallback={<PageLoader />}>
+                    <PublicOrderStatusPage />
+                  </Suspense>
+                }
+              />
+              <Route
+                path="/track/:orderNumber"
               element={
                 <Suspense fallback={<PageLoader />}>
                   <OrderTrackingPage />
                 </Suspense>
               }
             />
-            <Route
-              path="/"
-              element={
-                <RequireLicense>
+              <Route
+                path="/"
+                element={
+                  <RequireLicense>
                   <RequireAuth>
                     <AppShell />
                   </RequireAuth>
                 </RequireLicense>
               }
-            >
+              />
               <Route
                 path="/pos"
                 element={
@@ -180,9 +171,9 @@ function AppInner() {
                   </Suspense>
                 }
               />
-            </Route>
-          </Routes>
-        </HashRouter>
+            </Routes>
+          </HashRouter>
+        </>
       )}
     </>
   );
