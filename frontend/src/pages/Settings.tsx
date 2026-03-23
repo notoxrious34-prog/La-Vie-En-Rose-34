@@ -1339,7 +1339,7 @@ function BackupTab() {
     },
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['backups'] });
-      pushToast({ kind: 'success', title: 'Sauvegarde créée', message: res?.backup?.filename });
+      pushToast({ kind: 'success', title: 'Sauvegarde créée', message: res?.filename });
     },
     onError: (e: any) => {
       pushToast({ kind: 'error', title: 'Erreur de sauvegarde', message: String(e?.message ?? 'Erreur') });
@@ -1573,7 +1573,7 @@ function LicenseTab() {
   const activateMutation = useMutation({
     mutationFn: async (key: string) => {
       if (window.electronAPI?.license) {
-        return await window.electronAPI.license.activate(key, null);
+        return await window.electronAPI.license.activate(key, 0);
       }
       return { success: false, error: 'Not a desktop app' };
     },

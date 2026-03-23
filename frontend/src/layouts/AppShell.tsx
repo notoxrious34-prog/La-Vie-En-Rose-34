@@ -63,7 +63,7 @@ function Sidebar({ collapsed, setCollapsed, isArabic }: { collapsed: boolean; se
       void window.electronAPI.window.isFullscreen().then((v) => setIsFullscreen(Boolean(v)));
       if (window.electronAPI?.window?.onFullscreenChanged) {
         cleanup = window.electronAPI.window.onFullscreenChanged((payload) => {
-          setIsFullscreen(Boolean(payload?.isFullscreen));
+          setIsFullscreen(payload);
         });
       }
       return () => cleanup?.();

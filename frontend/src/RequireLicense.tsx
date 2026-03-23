@@ -25,7 +25,7 @@ export function RequireLicense({ children }: PropsWithChildren) {
           return;
         }
 
-        const res = (await window.electronAPI.license.status()) as LicenseStatus;
+        const res = (await window.electronAPI.license.status()) as unknown as LicenseStatus;
         const ok = res.status === 'licensed' && res.activated;
         if (mounted) setState({ loading: false, ok, reason: res.reason });
       } catch {

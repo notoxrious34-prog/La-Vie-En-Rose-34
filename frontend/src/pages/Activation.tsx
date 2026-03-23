@@ -26,7 +26,7 @@ export function ActivationPage() {
 
     setBusy(true);
     try {
-      const res = await window.electronAPI.license.activate(normalizedKey, null);
+      const res = await window.electronAPI.license.activate(normalizedKey, 0);
       if (res.success) {
         setMessage({ type: 'success', text: 'Activation réussie. Redirection en cours...' });
         window.setTimeout(() => navigate('/', { replace: true }), 2000);
