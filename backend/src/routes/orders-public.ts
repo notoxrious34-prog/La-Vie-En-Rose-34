@@ -1,5 +1,7 @@
 import { Router } from 'express';
+import { z } from 'zod';
 import { getDb } from '../storage/db';
+import { requireAuth, type AuthRequest } from '../middleware/auth';
 
 export const ordersPublicRouter = Router();
 
@@ -33,21 +35,21 @@ ordersPublicRouter.get('/:orderNumber', (req, res) => {
     status: row.status,
     total: row.total,
     customerName: row.customer_name,
-    customerPhone: row.customer_phone,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     items
   });
 });
 
-ordersPublicRouter.patch('/:orderNumber/status', (req, res) => {
+const updateStatusSchema = z.object({
+  status: z.enum(['pending', 'processing', 'ready', 'completed']),
+});
+
+ordersPublicRouter.patch('/:orderNumber/status', requireAuth, (req: AuthRequest, res) => {
   const { orderNumber } = req.params;
-  const { status } = req.body;
-  const validStatuses = ['pending', 'processing', 'ready', 'completed'];
-  
-  if (!status || !validStatuses.includes(status)) {
-    return res.status(400).json({ error: 'invalid_status' });
-  }
+  const parsed = updateStatusSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: 'invalid_body' });
+  const { status } = parsed.data;
 
   const db = getDb();
   const now = Date.now();

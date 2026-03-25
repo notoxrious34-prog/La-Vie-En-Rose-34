@@ -2,9 +2,8 @@ name: Build and Release
 
 on:
   push:
-    branches:
-      - main
-      - master
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
@@ -50,6 +49,7 @@ jobs:
       - name: Build application
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
           NODE_OPTIONS: "--max-old-space-size=4096"
           LVER_JWT_SECRET: ${{ secrets.LVER_JWT_SECRET }}
@@ -64,6 +64,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
         with:
           repository: notoxrious34-prog/La-Vie-En-Rose-34
           target_commitish: main

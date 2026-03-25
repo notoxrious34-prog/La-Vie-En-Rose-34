@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { getDb } from '../storage/db';
+import { normalizePermissions } from '../middleware/auth';
 
 // Enhanced rate limiting with cleanup
 const failedAttempts = new Map<string, { count: number; resetAt: number; lastAttempt: number }>();
@@ -179,11 +180,31 @@ authRouter.post('/login', (req, res) => {
 
     // Generate JWT token with error handling
     let token: string;
+    let resolvedPermissions: string[] = [];
     try {
+      let permissions: string[] = [];
+      try {
+        const db = getDb();
+        const roleId = String(row.role ?? 'employee');
+        const roleRow = db.prepare('SELECT permissions FROM roles WHERE id = ?').get(roleId) as { permissions?: string } | undefined;
+        let raw: unknown = [];
+        try {
+          raw = roleRow?.permissions ? JSON.parse(String(roleRow.permissions)) : [];
+        } catch {
+          raw = [];
+        }
+        permissions = normalizePermissions(raw);
+      } catch {
+        permissions = [];
+      }
+
+      resolvedPermissions = permissions;
+
       const payload = { 
         id: row.id, 
         username: row.username, 
         role: row.role,
+        permissions: resolvedPermissions,
         iat: Math.floor(Date.now() / 1000)
       };
       
@@ -211,6 +232,7 @@ authRouter.post('/login', (req, res) => {
         id: row.id, 
         username: row.username, 
         role: row.role,
+        permissions: resolvedPermissions,
         active: Boolean(active)
       } 
     });

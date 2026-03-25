@@ -1,6 +1,5 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
 
 function getFirebaseConfig() {
   const apiKey = import.meta.env.VITE_FIREBASE_API_KEY as string | undefined;
@@ -49,5 +48,17 @@ export async function getFirebaseAuth() {
 export function getFirebaseFirestore() {
   const app = getFirebaseApp();
   if (!app) return null;
-  return getFirestore(app);
+  // Lazy-load Firestore to reduce initial bundle size.
+  // NOTE: caller must handle Promise if they need Firestore early.
+  // Here we keep a synchronous API by using a cached module if available.
+  // If Firestore hasn't been imported yet, return null and let callers fall back.
+  const g: any = globalThis as any;
+  const cached = g.__lver_firestore_getFirestore;
+  if (typeof cached === 'function') return cached(app);
+  void import('firebase/firestore')
+    .then((m: any) => {
+      g.__lver_firestore_getFirestore = m.getFirestore;
+    })
+    .catch(() => undefined);
+  return null;
 }

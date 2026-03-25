@@ -7,7 +7,15 @@ const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const PORT = process.env.PORT || 8888;
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'lvr34-admin-secret-2024';
+let ADMIN_SECRET = process.env.ADMIN_SECRET;
+if (!ADMIN_SECRET) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction) {
+    throw new Error('ADMIN_SECRET must be set in production');
+  }
+  ADMIN_SECRET = crypto.randomBytes(24).toString('hex');
+  console.warn('[license-server] ADMIN_SECRET not set; using ephemeral secret for this session');
+}
 
 // Database setup
 const DB_PATH = path.join(__dirname, 'licenses.db');
@@ -85,8 +93,24 @@ function generateActivationToken() {
 }
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+const isProduction = process.env.NODE_ENV === 'production';
+const allowOrigins = String(process.env.CORS_ALLOW_ORIGINS || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!isProduction) return callback(null, true);
+      if (!origin) return callback(null, false);
+      if (allowOrigins.length === 0) return callback(null, false);
+      return callback(null, allowOrigins.includes(origin));
+    },
+    credentials: false,
+  })
+);
+app.use(express.json({ limit: '32kb' }));
 
 // Log admin actions
 function logAdminAction(action, details, adminKey) {
@@ -283,13 +307,28 @@ app.post('/api/deactivate', (req, res) => {
 
 // Admin authentication middleware
 function requireAdmin(req, res, next) {
-  const authHeader = req.headers.authorization;
-  
-  if (!authHeader || authHeader !== `Bearer ${ADMIN_SECRET}`) {
+  try {
+    const authHeader = String(req.headers.authorization || '');
+    const match = authHeader.match(/^\s*Bearer\s+(.+?)\s*$/i);
+    const token = match?.[1] ? String(match[1]) : '';
+    if (!token) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const expected = String(ADMIN_SECRET || '');
+    const a = Buffer.from(token, 'utf8');
+    const b = Buffer.from(expected, 'utf8');
+    if (a.length !== b.length) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    if (!crypto.timingSafeEqual(a, b)) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    return next();
+  } catch {
     return res.status(401).json({ error: 'Unauthorized' });
   }
-  
-  next();
 }
 
 // Generate single license

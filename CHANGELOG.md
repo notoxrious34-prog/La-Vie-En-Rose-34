@@ -6,6 +6,14 @@ The format is based on Keep a Changelog.
 
 ## [Unreleased]
 
+## v2.1.0
+
+- Performance optimization (Level 2)
+- UI fixes (Splash + Sidebar)
+- Roles & Permissions system improved
+- Stability improvements
+- Bug fixes
+
 ### Added
 - Desktop-style full-screen application shell (sidebar + workspace)
 - Fullscreen toggle in main app and admin panel

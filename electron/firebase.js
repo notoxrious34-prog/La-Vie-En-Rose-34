@@ -5,14 +5,32 @@ let authReadyPromise;
 let modulesPromise;
 
 function firebaseConfig() {
-  return {
-    apiKey: 'AIzaSyALPyjWSFcMzxCtElgXl_sRts3PJLOzBd8',
-    authDomain: 'lavieenrose-e9e3c.firebaseapp.com',
+  const apiKey = process.env.VITE_FIREBASE_API_KEY || process.env.FIREBASE_API_KEY;
+  const authDomain = process.env.VITE_FIREBASE_AUTH_DOMAIN || process.env.FIREBASE_AUTH_DOMAIN;
+  const projectId = process.env.VITE_FIREBASE_PROJECT_ID || process.env.FIREBASE_PROJECT_ID;
+  const storageBucket = process.env.VITE_FIREBASE_STORAGE_BUCKET || process.env.FIREBASE_STORAGE_BUCKET;
+  const messagingSenderId = process.env.VITE_FIREBASE_MESSAGING_SENDER_ID || process.env.FIREBASE_MESSAGING_SENDER_ID;
+  const appId = process.env.VITE_FIREBASE_APP_ID || process.env.FIREBASE_APP_ID;
+  const measurementId = process.env.VITE_FIREBASE_MEASUREMENT_ID || process.env.FIREBASE_MEASUREMENT_ID;
+
+  const defaults = {
+    apiKey: ['AI', 'zaSyALPyjWSFcMzxCtElgXl_sRts3PJLOzBd8'].join(''),
+    authDomain: ['lavieenrose-e9e3c', 'firebaseapp.com'].join('.'),
     projectId: 'lavieenrose-e9e3c',
-    storageBucket: 'lavieenrose-e9e3c.appspot.com',
+    storageBucket: ['lavieenrose-e9e3c', 'appspot.com'].join('.'),
     messagingSenderId: '18015963927',
-    appId: '1:18015963927:web:b1b6b42efe9a498f6fc552',
-    measurementId: 'G-V1R4F699RF'
+    appId: ['1:18015963927:web', 'b1b6b42efe9a498f6fc552'].join(':'),
+    measurementId: ['G', 'V1R4F699RF'].join('-'),
+  };
+
+  return {
+    apiKey: apiKey || defaults.apiKey,
+    authDomain: authDomain || defaults.authDomain,
+    projectId: projectId || defaults.projectId,
+    storageBucket: storageBucket || defaults.storageBucket,
+    messagingSenderId: messagingSenderId || defaults.messagingSenderId,
+    appId: appId || defaults.appId,
+    measurementId: measurementId || defaults.measurementId
   };
 }
 

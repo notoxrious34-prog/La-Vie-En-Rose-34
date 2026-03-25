@@ -101,7 +101,7 @@ activityRouter.get('/stats', requireAuth, (_req, res) => {
 });
 
 // Clear old logs (admin only)
-activityRouter.delete('/cleanup', requireRole(['admin']), (req, res) => {
+activityRouter.delete('/cleanup', requireAuth, requireRole(['admin']), (req, res) => {
   const db = getDb();
   const rawDays = Number(req.body?.days ?? 30);
   const days = Number.isFinite(rawDays) && rawDays > 0 ? Math.min(rawDays, 365) : 30;

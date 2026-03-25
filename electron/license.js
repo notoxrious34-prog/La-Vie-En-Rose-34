@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 
 const APP_NAME = 'La-Vie-En-Rose-34';
 const TRIAL_DAYS = 14;
@@ -29,9 +29,16 @@ function verifyIntegrity() {
   return true;
 }
 
-function safeExec(command) {
+function safeExec(file, args) {
   try {
-    return execSync(command, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000 }).trim();
+    const res = spawnSync(file, Array.isArray(args) ? args : [], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 3000,
+      windowsHide: true,
+      shell: false,
+    });
+    return String(res.stdout || '').trim();
   } catch {
     return '';
   }
@@ -49,20 +56,20 @@ function parseFirstNonHeaderLine(output) {
 
 function getWindowsMachineGuid() {
   // Stable across reboots; changes only on OS reinstall.
-  const out = safeExec('reg query "HKLM\\SOFTWARE\\Microsoft\\Cryptography" /v MachineGuid');
+  const out = safeExec('reg', ['query', 'HKLM\\SOFTWARE\\Microsoft\\Cryptography', '/v', 'MachineGuid']);
   const match = out.match(/MachineGuid\s+REG_\w+\s+([0-9a-fA-F-]+)/);
   return match?.[1] ?? '';
 }
 
 function getWindowsCpuId() {
   // ProcessorId may be blank on some systems.
-  const out = safeExec('wmic cpu get ProcessorId');
+  const out = safeExec('wmic', ['cpu', 'get', 'ProcessorId']);
   return parseFirstNonHeaderLine(out).replace(/\s+/g, '');
 }
 
 function getWindowsDiskSerial() {
   // SerialNumber is not always present; we take first disk.
-  const out = safeExec('wmic diskdrive get SerialNumber');
+  const out = safeExec('wmic', ['diskdrive', 'get', 'SerialNumber']);
   return parseFirstNonHeaderLine(out).replace(/\s+/g, '');
 }
 

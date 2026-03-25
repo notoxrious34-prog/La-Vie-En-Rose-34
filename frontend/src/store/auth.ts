@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { api } from '../lib/api';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { getFirebaseAuth, isFirebaseConfigured } from '../lib/firebaseClient';
+import { isFirebaseConfigured } from '../lib/firebaseClient';
 
 export type AuthUser = {
   id: string;
@@ -90,6 +90,7 @@ export const useAuth = create<AuthState>((set, get) => ({
 
       if (firebaseEnabled) {
         try {
+          const { getFirebaseAuth } = await import('../lib/firebaseClient');
           const auth = await getFirebaseAuth();
           if (!auth) throw new Error('firebase_unavailable');
           const cred = await signInWithEmailAndPassword(auth, identifier, password);
@@ -170,6 +171,7 @@ export const useAuth = create<AuthState>((set, get) => ({
     void (async () => {
       try {
         if (!isFirebaseConfigured()) return;
+        const { getFirebaseAuth } = await import('../lib/firebaseClient');
         const auth = await getFirebaseAuth();
         if (auth) await signOut(auth);
       } catch (err) {

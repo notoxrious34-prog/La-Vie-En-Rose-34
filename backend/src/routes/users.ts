@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { getDb } from '../storage/db';
-import { requireAuth, requirePermission, getUserPermissions, type UserRole, type AuthRequest } from '../middleware/auth';
+import { requireAuth, requirePermission, getUserPermissions, normalizePermissions, type UserRole, type AuthRequest } from '../middleware/auth';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
 import { getAdminAuth, getAdminFirestore } from '../lib/firebaseAdmin';
@@ -56,20 +56,43 @@ async function writeAuditLog(params: {
 
 // Get user permissions by role (public)
 usersRouter.get('/permissions/:role', async (req, res) => {
-  const { role } = req.params as { role: UserRole };
+  const role = String((req.params as any)?.role ?? '');
+  if (!role || role.length > 64) return res.status(400).json({ error: 'invalid_role' });
   try {
     const fs = getAdminFirestore();
     const snap = await fs.collection('roles').doc(role).get();
     if (snap.exists) {
       const data = snap.data() as { permissions?: unknown };
-      const permissions = Array.isArray(data.permissions) ? data.permissions.filter((p) => typeof p === 'string') : [];
+      const permissions = normalizePermissions(data.permissions);
       return res.json({ role, permissions, source: 'firestore' });
     }
   } catch {
     // ignore
   }
 
-  const permissions = getUserPermissions(role);
+  // Local fallback: SQLite roles table
+  try {
+    const db = getDb();
+    const row = db.prepare('SELECT permissions FROM roles WHERE id = ?').get(role) as { permissions?: string } | undefined;
+    if (row?.permissions) {
+      let raw: unknown = [];
+      try {
+        raw = JSON.parse(String(row.permissions));
+      } catch {
+        raw = [];
+      }
+      const permissions = normalizePermissions(raw);
+      return res.json({ role, permissions, source: 'sqlite' });
+    }
+  } catch {
+    // ignore
+  }
+
+  if (role !== 'admin' && role !== 'manager' && role !== 'employee') {
+    return res.json({ role, permissions: [], source: 'static' });
+  }
+
+  const permissions = getUserPermissions(role as UserRole);
   return res.json({ role, permissions, source: 'static' });
 });
 
@@ -232,13 +255,15 @@ usersRouter.post('/me/password', requireAuth, (req, res) => {
 });
 
 // Create new user (admin only)
-const createFirebaseUserSchema = z.object({
-  displayName: z.string().min(1),
-  email: z.string().email(),
-  password: z.string().min(8),
-  roleId: z.enum(['admin', 'manager', 'employee']).default('employee'),
-  active: z.boolean().default(true),
-});
+const createFirebaseUserSchema = z
+  .object({
+    displayName: z.string().trim().min(1).max(120),
+    email: z.string().trim().email().max(200),
+    password: z.string().min(8),
+    roleId: z.string().trim().min(1).max(64).default('employee'),
+    active: z.boolean().default(true),
+  })
+  .strict();
 
 usersRouter.post('/', requirePermission('manage_users'), async (req: AuthRequest, res) => {
   if (isFirebase(req)) {
@@ -248,6 +273,17 @@ usersRouter.post('/', requirePermission('manage_users'), async (req: AuthRequest
     // Prevent privilege escalation: only admins can create admin accounts.
     if (parsed.data.roleId === 'admin' && req.user?.role !== 'admin') {
       return res.status(403).json({ error: 'forbidden', message: 'Only admins can create admin accounts.' });
+    }
+
+    // Validate role exists (or is a built-in role).
+    try {
+      const fs = getAdminFirestore();
+      if (parsed.data.roleId !== 'admin' && parsed.data.roleId !== 'manager' && parsed.data.roleId !== 'employee') {
+        const roleSnap = await fs.collection('roles').doc(parsed.data.roleId).get();
+        if (!roleSnap.exists) return res.status(400).json({ error: 'invalid_role' });
+      }
+    } catch {
+      // ignore
     }
 
     try {
@@ -294,7 +330,7 @@ usersRouter.post('/', requirePermission('manage_users'), async (req: AuthRequest
   const createLocalUserSchema = z.object({
     username: z.string().trim().min(2).max(60),
     password: z.string().min(8).max(200),
-    role: z.enum(['admin', 'manager', 'employee']).default('employee'),
+    role: z.string().trim().min(1).max(64).default('employee'),
     full_name: z.string().trim().min(1).max(120).optional(),
     email: z.string().trim().email().max(200).optional(),
     phone: z.string().trim().min(3).max(40).optional(),
@@ -308,6 +344,18 @@ usersRouter.post('/', requirePermission('manage_users'), async (req: AuthRequest
   // Prevent privilege escalation
   if (localParsed.data.role === 'admin' && req.user?.role !== 'admin') {
     return res.status(403).json({ error: 'forbidden', message: 'Only admins can create admin accounts.' });
+  }
+
+  // Validate role exists (or built-in)
+  try {
+    const roleId = String(localParsed.data.role || 'employee');
+    if (roleId !== 'admin' && roleId !== 'manager' && roleId !== 'employee') {
+      const db = getDb();
+      const exists = db.prepare('SELECT id FROM roles WHERE id = ?').get(roleId) as { id: string } | undefined;
+      if (!exists) return res.status(400).json({ error: 'invalid_role' });
+    }
+  } catch {
+    // ignore
   }
 
   const { username, password, role, full_name, email, phone } = localParsed.data;
@@ -329,7 +377,7 @@ usersRouter.post('/', requirePermission('manage_users'), async (req: AuthRequest
       INSERT INTO user_profiles (id, user_id, full_name, email, phone, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `
-    ).run(nanoid(), id, full_name, email, phone, now, now);
+    ).run(nanoid(), id, full_name ?? null, email ?? null, phone ?? null, now, now);
 
     const adminId = req.user!.id;
     db.prepare(
@@ -377,6 +425,15 @@ usersRouter.delete('/:id', requirePermission('manage_users'), async (req: AuthRe
   }
 
   const db = getDb();
+
+  const target = db.prepare('SELECT id, role FROM users WHERE id = ?').get(id) as { id: string; role: UserRole } | undefined;
+  if (!target) return res.status(404).json({ error: 'not_found' });
+
+  // Managers can manage users, but cannot delete admin accounts.
+  if (req.user?.role !== 'admin' && target.role === 'admin') {
+    return res.status(403).json({ error: 'forbidden', message: 'Only admins can delete admin accounts.' });
+  }
+
   db.prepare('DELETE FROM users WHERE id = ?').run(id);
   const adminId = req.user!.id;
   db.prepare(
@@ -390,7 +447,8 @@ usersRouter.delete('/:id', requirePermission('manage_users'), async (req: AuthRe
 
 const setActiveSchema = z.object({ active: z.boolean() });
 
-const setRoleSchema = z.object({ roleId: z.enum(['admin', 'manager', 'employee']) });
+const setRoleSchemaLocal = z.object({ roleId: z.string().trim().min(1).max(64) }).strict();
+const setRoleSchemaFirebase = z.object({ roleId: z.string().trim().min(1).max(64) }).strict();
 
 usersRouter.patch('/:id/active', requirePermission('manage_users'), async (req: AuthRequest, res) => {
   const id = String(req.params.id ?? '');
@@ -458,7 +516,7 @@ usersRouter.patch('/:id/active', requirePermission('manage_users'), async (req: 
 usersRouter.patch('/:id/role', requirePermission('manage_users'), async (req: AuthRequest, res) => {
   const id = String(req.params.id ?? '');
   if (id === req.user!.id) return res.status(400).json({ error: 'cannot_change_self' });
-  const parsed = setRoleSchema.safeParse(req.body);
+  const parsed = (isFirebase(req) ? setRoleSchemaFirebase.safeParse(req.body) : setRoleSchemaLocal.safeParse(req.body));
   if (!parsed.success) return res.status(400).json({ error: 'invalid_body', details: parsed.error.issues });
 
   if (isFirebase(req)) {
@@ -502,6 +560,17 @@ usersRouter.patch('/:id/role', requirePermission('manage_users'), async (req: Au
 
   const db = getDb();
   const now = Date.now();
+
+  // Validate role exists (or built-in)
+  try {
+    const roleId = String(parsed.data.roleId || 'employee');
+    if (roleId !== 'admin' && roleId !== 'manager' && roleId !== 'employee') {
+      const exists = db.prepare('SELECT id FROM roles WHERE id = ?').get(roleId) as { id: string } | undefined;
+      if (!exists) return res.status(400).json({ error: 'invalid_role' });
+    }
+  } catch {
+    // ignore
+  }
 
   // Managers can manage users, but cannot assign admin role.
   if (req.user?.role !== 'admin' && parsed.data.roleId === 'admin') {

@@ -2,7 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { getAdminAuth, getAdminFirestore } from '../lib/firebaseAdmin';
 
-export type UserRole = 'admin' | 'manager' | 'employee';
+export type UserRole = 'admin' | 'manager' | 'employee' | (string & {});
 
 export type AuthUser = {
   id: string;
@@ -14,19 +14,73 @@ export type AuthUser = {
 
 export type AuthRequest = Request & { user?: AuthUser };
 
+export const ALL_PERMISSIONS = [
+  'manage_products',
+  'manage_customers',
+  'manage_suppliers',
+  'access_analytics',
+  'manage_users',
+  'use_pos',
+  'manage_settings',
+  'view_activity',
+  'manage_repairs',
+  'manage_purchases',
+] as const;
+
+export type Permission = (typeof ALL_PERMISSIONS)[number];
+
+export function normalizePermissions(input: unknown): Permission[] {
+  const allowed = new Set<string>(ALL_PERMISSIONS);
+  if (!Array.isArray(input)) return [];
+  const out: Permission[] = [];
+  const seen = new Set<string>();
+  for (const v of input) {
+    if (typeof v !== 'string') continue;
+    const p = v.trim();
+    if (!allowed.has(p)) continue;
+    if (seen.has(p)) continue;
+    seen.add(p);
+    out.push(p as Permission);
+  }
+  return out;
+}
+
 // Permission definitions per role
-const rolePermissions: Record<UserRole, string[]> = {
-  admin: ['manage_products', 'manage_customers', 'manage_suppliers', 'access_analytics', 'manage_users', 'use_pos', 'manage_settings', 'view_activity', 'manage_repairs', 'manage_purchases'],
-  manager: ['manage_products', 'manage_customers', 'manage_suppliers', 'access_analytics', 'use_pos', 'view_activity', 'manage_repairs'],
-  employee: ['use_pos', 'manage_customers']
+const rolePermissions: Record<UserRole, Permission[]> = {
+  admin: normalizePermissions([
+    'manage_products',
+    'manage_customers',
+    'manage_suppliers',
+    'access_analytics',
+    'manage_users',
+    'use_pos',
+    'manage_settings',
+    'view_activity',
+    'manage_repairs',
+    'manage_purchases',
+  ]),
+  manager: normalizePermissions([
+    'manage_products',
+    'manage_customers',
+    'manage_suppliers',
+    'access_analytics',
+    'use_pos',
+    'view_activity',
+    'manage_repairs',
+  ]),
+  employee: normalizePermissions(['use_pos', 'manage_customers']),
 };
 
 export function getUserPermissions(role: UserRole): string[] {
-  return rolePermissions[role] || [];
+  if (role === 'admin' || role === 'manager' || role === 'employee') return rolePermissions[role] || [];
+  return [];
 }
 
 export function hasPermission(role: UserRole, permission: string): boolean {
-  return rolePermissions[role]?.includes(permission) || false;
+  if (role === 'admin' || role === 'manager' || role === 'employee') {
+    return rolePermissions[role]?.includes(permission as any) || false;
+  }
+  return false;
 }
 
 function getJwtSecret() {
@@ -71,7 +125,7 @@ async function tryFirebaseAuth(token: string): Promise<AuthUser | null> {
     const roleId = (typeof userDoc.roleId === 'string' ? userDoc.roleId : 'employee') as UserRole;
     const roleSnap = await fs.collection('roles').doc(roleId).get();
     const roleDoc = roleSnap.exists ? (roleSnap.data() as { permissions?: unknown }) : {};
-    const permissions = Array.isArray(roleDoc.permissions) ? roleDoc.permissions.filter((p) => typeof p === 'string') : [];
+    const permissions = normalizePermissions(roleDoc.permissions);
 
     return {
       id: uid,
@@ -97,8 +151,9 @@ function tryLocalJwt(token: string): AuthUser | null {
 }
 
 export function requireAuth(req: AuthRequest, res: Response, next: NextFunction) {
-  const header = req.headers.authorization;
-  const token = header?.startsWith('Bearer ') ? header.slice('Bearer '.length) : undefined;
+  const header = String(req.headers.authorization ?? '').trim();
+  const match = header.match(/^Bearer\s+(.+?)\s*$/i);
+  const token = match?.[1] ? String(match[1]).trim() : '';
   if (!token) return res.status(401).json({ error: 'unauthorized' });
 
   void (async () => {

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { nanoid } from 'nanoid';
 import { getDb } from '../storage/db';
-import { requireAuth, type AuthRequest } from '../middleware/auth';
+import { requireAuth, requirePermission, type AuthRequest } from '../middleware/auth';
 
 export const posRouter = Router();
 posRouter.use(requireAuth);
@@ -45,7 +45,7 @@ const createSaleSchema = z.object({
     .min(1),
 });
 
-posRouter.post('/sales', (req: AuthRequest, res) => {
+posRouter.post('/sales', requirePermission('use_pos'), (req: AuthRequest, res) => {
   const parsed = createSaleSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: 'invalid_body' });
 
@@ -221,7 +221,7 @@ posRouter.post('/sales', (req: AuthRequest, res) => {
   }
 });
 
-posRouter.get('/daily-summary', (req, res) => {
+posRouter.get('/daily-summary', requirePermission('use_pos'), (req, res) => {
   try {
     const date = String(req.query.date ?? new Date().toISOString().slice(0, 10));
     const [y, m, d] = date.split('-').map((x) => Number(x));
@@ -249,7 +249,7 @@ posRouter.get('/daily-summary', (req, res) => {
   }
 });
 
-posRouter.get('/sales', (req, res) => {
+posRouter.get('/sales', requirePermission('use_pos'), (req, res) => {
   const parsed = listSalesSchema.safeParse(req.query);
   if (!parsed.success) return res.status(400).json({ error: 'invalid_query' });
 
@@ -317,7 +317,7 @@ posRouter.get('/sales', (req, res) => {
   }
 });
 
-posRouter.get('/sales/:id', (req, res) => {
+posRouter.get('/sales/:id', requirePermission('use_pos'), (req, res) => {
   try {
     const id = String(req.params.id || '');
     const db = getDb();

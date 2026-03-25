@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { HashRouter, Route, Routes } from 'react-router-dom';
 import { AppShell } from './layouts/AppShell';
 import { RequireAuth } from './RequireAuth';
@@ -9,7 +9,6 @@ import { UpdateNotification } from './components/UpdateNotification';
 import { ToastHost } from './components/ui/ToastHost';
 import { Skeleton } from './components/ui/Skeleton';
 import { useToasts } from './lib/toast';
-import { useDebounce } from './lib/uiOptimization';
 import { preloadCriticalImages } from './lib/assetOptimization';
 import { createCleanup } from './lib/cleanup';
 
@@ -49,17 +48,34 @@ function AppInner() {
   const { items, closeToast } = useToasts();
   const cleanup = createCleanup();
 
-  // Debounced splash hide to prevent flickering
-  const debouncedHideSplash = useDebounce(() => {
-    setShowSplash(false);
-    cleanup.execute(); // Cleanup when app is ready
-    setShowUpdate(true); // Show update notification after app loads
-  }, 100);
+  const splashDoneRef = useRef(false);
+  const splashTimerRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (splashTimerRef.current) {
+        window.clearTimeout(splashTimerRef.current);
+        splashTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleSplashComplete = () => {
+    if (splashDoneRef.current) return;
+    splashDoneRef.current = true;
+
+    // Small delay keeps the transition smooth without risking incorrect hook usage.
+    splashTimerRef.current = window.setTimeout(() => {
+      setShowSplash(false);
+      cleanup.execute();
+      setShowUpdate(true);
+    }, 100);
+  };
 
   return (
     <>
       <ToastHost items={items} onClose={closeToast} />
-      {showSplash && <SplashScreen onComplete={debouncedHideSplash} duration={3000} />}
+      {showSplash && <SplashScreen onComplete={handleSplashComplete} duration={3000} />}
       {!showSplash && (
         <>
           {showUpdate && <UpdateNotification onClose={() => setShowUpdate(false)} />}
@@ -89,88 +105,97 @@ function AppInner() {
                 </Suspense>
               }
             />
+
               <Route
-                path="/"
                 element={
                   <RequireLicense>
-                  <RequireAuth>
-                    <AppShell />
-                  </RequireAuth>
-                </RequireLicense>
-              }
-              />
-              <Route
-                path="/pos"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <POSPage />
-                  </Suspense>
+                    <RequireAuth>
+                      <AppShell />
+                    </RequireAuth>
+                  </RequireLicense>
                 }
-              />
-              <Route
-                path="/sales"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <SalesHistoryPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/inventory"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <InventoryPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/customers"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <CustomersPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/suppliers"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <SuppliersPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/repairs"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <RepairsPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/settings"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <SettingsPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="/dashboard"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <DashboardPage />
-                  </Suspense>
-                }
-              />
-              <Route
-                path="*"
-                element={
-                  <Suspense fallback={<PageLoader />}>
-                    <POSPage />
-                  </Suspense>
-                }
-              />
+              >
+                <Route
+                  index
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <DashboardPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <DashboardPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/pos"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <POSPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/sales"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <SalesHistoryPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/inventory"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <InventoryPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/customers"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <CustomersPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/suppliers"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <SuppliersPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/repairs"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <RepairsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="/settings"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <SettingsPage />
+                    </Suspense>
+                  }
+                />
+                <Route
+                  path="*"
+                  element={
+                    <Suspense fallback={<PageLoader />}>
+                      <DashboardPage />
+                    </Suspense>
+                  }
+                />
+              </Route>
             </Routes>
           </HashRouter>
         </>

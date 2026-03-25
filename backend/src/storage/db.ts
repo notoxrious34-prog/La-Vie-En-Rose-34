@@ -202,7 +202,9 @@ function ensureUsersRolesExpanded(database: Database.Database) {
     .get() as { sql?: string } | undefined;
   const sql = String(row?.sql ?? '');
   if (!sql) return;
-  if (sql.includes("'manager'")) return;
+  // Only migrate legacy schemas that still enforce a fixed role CHECK constraint.
+  // New schemas allow arbitrary role IDs (custom roles).
+  if (!sql.includes('CHECK(role IN')) return;
 
   const hasActive = sql.includes('active');
   const hasLastLogin = sql.includes('last_login');
@@ -213,7 +215,7 @@ function ensureUsersRolesExpanded(database: Database.Database) {
         id TEXT PRIMARY KEY,
         username TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
-        role TEXT NOT NULL CHECK(role IN ('admin','manager','employee')),
+        role TEXT NOT NULL,
         active INTEGER NOT NULL DEFAULT 1,
         last_login INTEGER,
         created_at INTEGER NOT NULL
@@ -256,11 +258,21 @@ function migrate() {
       id TEXT PRIMARY KEY,
       username TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK(role IN ('admin','manager','employee')),
+      role TEXT NOT NULL,
       active INTEGER NOT NULL DEFAULT 1,
       last_login INTEGER,
       created_at INTEGER NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS roles (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      permissions TEXT NOT NULL,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_roles_id ON roles(id);
 
     CREATE TABLE IF NOT EXISTS categories (
       id TEXT PRIMARY KEY,
@@ -535,6 +547,69 @@ function migrate() {
       FOREIGN KEY(created_by) REFERENCES users(id) ON DELETE SET NULL
     );
   `);
+
+  try {
+    const now = Date.now();
+    database
+      .prepare(
+        `INSERT OR IGNORE INTO roles (id, name, permissions, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        'admin',
+        'Admin',
+        JSON.stringify([
+          'manage_products',
+          'manage_customers',
+          'manage_suppliers',
+          'access_analytics',
+          'manage_users',
+          'use_pos',
+          'manage_settings',
+          'view_activity',
+          'manage_repairs',
+          'manage_purchases',
+        ]),
+        now,
+        now
+      );
+
+    database
+      .prepare(
+        `INSERT OR IGNORE INTO roles (id, name, permissions, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        'manager',
+        'Manager',
+        JSON.stringify([
+          'manage_products',
+          'manage_customers',
+          'manage_suppliers',
+          'access_analytics',
+          'use_pos',
+          'view_activity',
+          'manage_repairs',
+        ]),
+        now,
+        now
+      );
+
+    database
+      .prepare(
+        `INSERT OR IGNORE INTO roles (id, name, permissions, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)`
+      )
+      .run(
+        'employee',
+        'Employee',
+        JSON.stringify(['use_pos', 'manage_customers']),
+        now,
+        now
+      );
+  } catch {
+    // ignore
+  }
 
   const row = database.prepare("SELECT value FROM meta WHERE key='schema_version'").get() as
     | { value: string }

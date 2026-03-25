@@ -35,8 +35,12 @@ const _hasFrontendDist = (() => {
 let isDev = !app.isPackaged && !_hasFrontendDist;
 let backupScheduler = null;
 
+let lastUpdateStatusPayload = null;
+
 const SPLASH_MIN_DURATION_MS = 5200;
 let splashShownAtMs = 0;
+let splashSafetyTimerA = null;
+let splashSafetyTimerB = null;
 
 autoUpdater.logger = log2;
 autoUpdater.logger.transports.file.level = 'info';
@@ -46,7 +50,8 @@ autoUpdater.allowPrerelease = false;
 
 const APP_NAME = 'La-Vie-En-Rose-34';
 
-ipcMain.handle('print:receipt', async () => {
+ipcMain.handle('print:receipt', async (event) => {
+  requireTrustedIpc(event);
   if (!mainWindow) throw new Error('no_window');
   const wc = mainWindow.webContents;
   return await new Promise((resolve, reject) => {
@@ -135,13 +140,54 @@ function createSplashWindow() {
         preload: preloadPath,
         contextIsolation: true,
         nodeIntegration: false,
-        sandbox: false,
+        sandbox: true,
+        webSecurity: true,
+        allowRunningInsecureContent: false,
+        devTools: false,
+        enableRemoteModule: false,
       },
     });
 
     try {
       Menu.setApplicationMenu(null);
       splashWindow.setMenuBarVisibility(false);
+    } catch {
+      // ignore
+    }
+
+    try {
+      splashWindow.webContents.setWindowOpenHandler(({ url }) => {
+        try {
+          shell.openExternal(String(url));
+        } catch {
+          // ignore
+        }
+        return { action: 'deny' };
+      });
+
+      splashWindow.webContents.on('will-navigate', (event, url) => {
+        try {
+          const u = new URL(String(url));
+          const allowed = u.protocol === 'file:' || u.protocol === 'app:';
+          if (!allowed) {
+            event.preventDefault();
+            try {
+              shell.openExternal(String(url));
+            } catch {
+              // ignore
+            }
+          }
+        } catch {
+          event.preventDefault();
+        }
+      });
+
+      const ses = splashWindow.webContents.session;
+      if (ses && typeof ses.setPermissionRequestHandler === 'function') {
+        ses.setPermissionRequestHandler((_wc, _permission, callback) => {
+          callback(false);
+        });
+      }
     } catch {
       // ignore
     }
@@ -167,6 +213,41 @@ function createSplashWindow() {
       } catch {
         // ignore
       }
+
+      try {
+        if (splashSafetyTimerA) clearTimeout(splashSafetyTimerA);
+        if (splashSafetyTimerB) clearTimeout(splashSafetyTimerB);
+      } catch {
+        // ignore
+      }
+
+      // Safety net A — fires just after the cinematic minimum.
+      // Handles the case where splash:ready is never sent (renderer crash, IPC miss).
+      const SPLASH_SAFETY_TIMEOUT_MS = SPLASH_MIN_DURATION_MS + 2000; // 7.2 s
+      splashSafetyTimerA = setTimeout(() => {
+        try {
+          if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+            log('[splash] Safety timeout A fired — showing main window');
+            destroySplashWindow();
+            showMainAfterSplash();
+          }
+        } catch {
+          // ignore
+        }
+      }, SPLASH_SAFETY_TIMEOUT_MS);
+
+      // Safety net B — absolute hard fallback (splash HTML itself fails to load).
+      splashSafetyTimerB = setTimeout(() => {
+        try {
+          if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
+            log('[splash] Safety timeout B fired — forcing main window visible');
+            destroySplashWindow();
+            showMainAfterSplash();
+          }
+        } catch {
+          // ignore
+        }
+      }, 12000);
     });
 
     splashWindow.on('closed', () => {
@@ -197,6 +278,14 @@ function destroySplashWindow() {
     // ignore
   } finally {
     splashWindow = null;
+    try {
+      if (splashSafetyTimerA) clearTimeout(splashSafetyTimerA);
+      if (splashSafetyTimerB) clearTimeout(splashSafetyTimerB);
+    } catch {
+      // ignore
+    }
+    splashSafetyTimerA = null;
+    splashSafetyTimerB = null;
   }
 }
 
@@ -212,7 +301,8 @@ function showMainAfterSplash() {
   }
 }
 
-ipcMain.on('splash:ready', () => {
+ipcMain.on('splash:ready', (event) => {
+  if (!isTrustedSplashIpcEvent(event)) return;
   try {
     destroySplashWindow();
   } catch {
@@ -220,34 +310,6 @@ ipcMain.on('splash:ready', () => {
   }
   showMainAfterSplash();
 });
-
-// Safety net A — fires just after the cinematic minimum.
-// Handles the case where splash:ready is never sent (renderer crash, IPC miss).
-const SPLASH_SAFETY_TIMEOUT_MS = SPLASH_MIN_DURATION_MS + 2000; // 7.2 s
-setTimeout(() => {
-  try {
-    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
-      log('[splash] Safety timeout A fired — showing main window');
-      destroySplashWindow();
-      showMainAfterSplash();
-    }
-  } catch {
-    // ignore
-  }
-}, SPLASH_SAFETY_TIMEOUT_MS);
-
-// Safety net B — absolute hard fallback (splash HTML itself fails to load).
-setTimeout(() => {
-  try {
-    if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isVisible()) {
-      log('[splash] Safety timeout B fired — forcing main window visible');
-      destroySplashWindow();
-      showMainAfterSplash();
-    }
-  } catch {
-    // ignore
-  }
-}, 12000);
 const BACKEND_PORT = 8787;
 
 function getAppDataPath() {
@@ -300,6 +362,42 @@ function logError(error) {
   console.error(logMessage.trim());
 }
 
+function isTrustedIpcEvent(event) {
+  try {
+    if (!event || !event.sender) return false;
+    if (!mainWindow || mainWindow.isDestroyed()) return false;
+    if (event.sender.id !== mainWindow.webContents.id) return false;
+
+    const frameUrl = String(event.senderFrame?.url || '');
+    if (isDev) {
+      return /^https?:\/\/localhost(?::\d+)?\//i.test(frameUrl);
+    }
+
+    return /^(file|app):\/\//i.test(frameUrl);
+  } catch {
+    return false;
+  }
+}
+
+function requireTrustedIpc(event) {
+  if (!isTrustedIpcEvent(event)) {
+    throw new Error('untrusted_ipc_sender');
+  }
+}
+
+function isTrustedSplashIpcEvent(event) {
+  try {
+    if (!event || !event.sender) return false;
+    if (!splashWindow || splashWindow.isDestroyed()) return false;
+    if (event.sender.id !== splashWindow.webContents.id) return false;
+
+    const frameUrl = String(event.senderFrame?.url || '');
+    return /^(file|app):\/\//i.test(frameUrl);
+  } catch {
+    return false;
+  }
+}
+
 function sendUpdateStatus(payload) {
   try {
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -320,6 +418,8 @@ function sendUpdateStatus(payload) {
         error: payload?.error ? String(payload.error) : undefined,
         state: String(payload?.state || 'unknown'),
       };
+
+      lastUpdateStatusPayload = nextPayload;
 
       mainWindow.webContents.send('update:status', nextPayload);
     }
@@ -414,6 +514,28 @@ function applyAutoUpdaterSettings(updateSettings) {
   } catch {
     // ignore
   }
+}
+
+function sanitizeBackupSettings(input) {
+  const raw = input && typeof input === 'object' ? input : {};
+  const autoBackup = raw.autoBackup === false ? false : Boolean(raw.autoBackup);
+  const frequency = raw.frequency === 'weekly' ? 'weekly' : raw.frequency === 'monthly' ? 'monthly' : 'daily';
+  const maxBackupsNum = Number(raw.maxBackups);
+  const maxBackups = Number.isFinite(maxBackupsNum) ? Math.min(365, Math.max(1, Math.floor(maxBackupsNum))) : 30;
+  const lastBackupNum = Number(raw.lastBackup);
+  const lastBackup = Number.isFinite(lastBackupNum) && lastBackupNum > 0 ? lastBackupNum : null;
+  return { autoBackup, frequency, maxBackups, lastBackup };
+}
+
+function sanitizeUpdateSettings(input) {
+  const raw = input && typeof input === 'object' ? input : {};
+  const autoCheck = raw.autoCheck === false ? false : Boolean(raw.autoCheck);
+  const lastCheckNum = Number(raw.lastCheck);
+  const lastCheck = Number.isFinite(lastCheckNum) && lastCheckNum > 0 ? lastCheckNum : null;
+  const skipVersion = raw.skipVersion ? String(raw.skipVersion).trim().slice(0, 64) : null;
+  const channel = raw.channel === 'beta' ? 'beta' : 'stable';
+  const installMode = raw.installMode === 'manual' ? 'manual' : 'onQuit';
+  return { autoCheck, lastCheck, skipVersion, channel, installMode };
 }
 
 function waitForBackend(timeout = 30000) {
@@ -676,7 +798,10 @@ function createWindow() {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
-      sandbox: false
+      sandbox: true,
+      enableRemoteModule: false,
+      webSecurity: true,
+      allowRunningInsecureContent: false
     },
     show: false,
     backgroundColor: '#0d0d0d'
@@ -823,6 +948,35 @@ function createWindow() {
     shell.openExternal(url);
     return { action: 'deny' };
   });
+
+  try {
+    // Block unexpected top-level navigations (phishing / open redirects)
+    mainWindow.webContents.on('will-navigate', (event, url) => {
+      try {
+        const u = new URL(String(url));
+        const allowed =
+          u.protocol === 'file:' ||
+          (u.protocol === 'http:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1')) ||
+          (u.protocol === 'https:' && (u.hostname === 'localhost' || u.hostname === '127.0.0.1'));
+        if (!allowed) {
+          event.preventDefault();
+          shell.openExternal(String(url));
+        }
+      } catch {
+        event.preventDefault();
+      }
+    });
+
+    // Default-deny permission requests from renderer
+    const ses = mainWindow.webContents.session;
+    if (ses && typeof ses.setPermissionRequestHandler === 'function') {
+      ses.setPermissionRequestHandler((_wc, _permission, callback) => {
+        callback(false);
+      });
+    }
+  } catch {
+    // ignore
+  }
   
   // Log renderer errors
   mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
@@ -874,6 +1028,7 @@ app.whenReady().then(async () => {
   log('Application starting...');
   
   try {
+    createSplashWindow();
     ensureDirectories();
     log('Directories ensured');
     
@@ -907,32 +1062,37 @@ app.whenReady().then(async () => {
     log('Window created');
 
     // Fullscreen control (optional, user-triggered)
-    ipcMain.on('toggle-fullscreen', () => {
+    ipcMain.on('toggle-fullscreen', (event) => {
+      if (!isTrustedIpcEvent(event)) return;
       const win = BrowserWindow.getFocusedWindow() || mainWindow;
       if (!win || win.isDestroyed()) return;
       win.setFullScreen(!win.isFullScreen());
     });
 
-    ipcMain.on('window:minimize', () => {
+    ipcMain.on('window:minimize', (event) => {
+      if (!isTrustedIpcEvent(event)) return;
       const win = BrowserWindow.getFocusedWindow() || mainWindow;
       if (!win || win.isDestroyed()) return;
       win.minimize();
     });
 
-    ipcMain.on('window:toggleMaximize', () => {
+    ipcMain.on('window:toggleMaximize', (event) => {
+      if (!isTrustedIpcEvent(event)) return;
       const win = BrowserWindow.getFocusedWindow() || mainWindow;
       if (!win || win.isDestroyed()) return;
       if (win.isMaximized()) win.unmaximize();
       else win.maximize();
     });
 
-    ipcMain.on('window:close', () => {
+    ipcMain.on('window:close', (event) => {
+      if (!isTrustedIpcEvent(event)) return;
       const win = BrowserWindow.getFocusedWindow() || mainWindow;
       if (!win || win.isDestroyed()) return;
       win.close();
     });
 
-    ipcMain.handle('window:isFullscreen', () => {
+    ipcMain.handle('window:isFullscreen', (event) => {
+      requireTrustedIpc(event);
       if (!mainWindow || mainWindow.isDestroyed()) return false;
       return mainWindow.isFullScreen();
     });
@@ -969,7 +1129,8 @@ app.whenReady().then(async () => {
   });
 });
 
-ipcMain.handle('update:quitAndInstall', () => {
+ipcMain.handle('update:quitAndInstall', (event) => {
+  requireTrustedIpc(event);
   try {
     autoUpdater.quitAndInstall();
     return { success: true };
@@ -1000,49 +1161,60 @@ app.on('before-quit', () => {
   }
 });
 
-ipcMain.handle('get-app-path', () => {
+ipcMain.handle('get-app-path', (event) => {
+  requireTrustedIpc(event);
   return app.getPath('userData');
 });
 
-ipcMain.handle('get-backend-url', () => {
+ipcMain.handle('get-backend-url', (event) => {
+  requireTrustedIpc(event);
   return `http://localhost:${BACKEND_PORT}`;
 });
 
-ipcMain.handle('get-db-path', () => {
+ipcMain.handle('get-db-path', (event) => {
+  requireTrustedIpc(event);
   return getDbPath();
 });
 
 // License handlers
-ipcMain.handle('license:validate', () => {
+ipcMain.handle('license:validate', (event) => {
+  requireTrustedIpc(event);
   return licenseFs.getLicenseStatus();
 });
 
-ipcMain.handle('license:info', () => {
+ipcMain.handle('license:info', (event) => {
+  requireTrustedIpc(event);
   return licenseFs.getLicenseInfo();
 });
 
-ipcMain.handle('license:activate', async (_, licenseKey) => {
+ipcMain.handle('license:activate', async (event, licenseKey) => {
+  requireTrustedIpc(event);
   return await licenseFs.activateLicense(licenseKey);
 });
 
-ipcMain.handle('license:deactivate', async () => {
+ipcMain.handle('license:deactivate', async (event) => {
+  requireTrustedIpc(event);
   return await licenseFs.deactivateLicense();
 });
 
-ipcMain.handle('license:generate', () => {
+ipcMain.handle('license:generate', (event) => {
+  requireTrustedIpc(event);
   return license.generateLicenseKey();
 });
 
-ipcMain.handle('license:status', () => {
+ipcMain.handle('license:status', (event) => {
+  requireTrustedIpc(event);
   return licenseFs.getLicenseStatus();
 });
 
-ipcMain.handle('license:trial', () => {
+ipcMain.handle('license:trial', (event) => {
+  requireTrustedIpc(event);
   return license.getTrialStatus();
 });
 
 // Backup handlers
-ipcMain.handle('backup:create', async () => {
+ipcMain.handle('backup:create', async (event) => {
+  requireTrustedIpc(event);
   try {
     await stopBackend();
     const result = await backup.createBackup();
@@ -1057,11 +1229,13 @@ ipcMain.handle('backup:create', async () => {
   }
 });
 
-ipcMain.handle('backup:list', () => {
+ipcMain.handle('backup:list', (event) => {
+  requireTrustedIpc(event);
   return backup.listBackups();
 });
 
-ipcMain.handle('backup:restore', async (_, filename) => {
+ipcMain.handle('backup:restore', async (event, filename) => {
+  requireTrustedIpc(event);
   // Sanitize filename: prevent path traversal
   const safeFilename = String(filename || '').replace(/[/\\]/g, '');
   if (!safeFilename || !safeFilename.endsWith('.sqlite')) {
@@ -1081,10 +1255,12 @@ ipcMain.handle('backup:restore', async (_, filename) => {
   }
 });
 
-ipcMain.handle('backup:delete', async (_, filename) => {
+ipcMain.handle('backup:delete', async (event, filename) => {
+  requireTrustedIpc(event);
   // Sanitize filename: prevent path traversal
-  const safeFilename = String(filename || '').replace(/[/\\..]/g, '');
-  if (!safeFilename || safeFilename !== filename) {
+  const raw = String(filename || '');
+  const safeFilename = raw.replace(/[/\\]/g, '');
+  if (!safeFilename || safeFilename !== raw || !safeFilename.endsWith('.sqlite')) {
     return { success: false, error: 'invalid_filename' };
   }
   try {
@@ -1095,52 +1271,99 @@ ipcMain.handle('backup:delete', async (_, filename) => {
   }
 });
 
-ipcMain.handle('backup:getSettings', () => {
+ipcMain.handle('backup:getSettings', (event) => {
+  requireTrustedIpc(event);
   return backup.getBackupSettings();
 });
 
-ipcMain.handle('backup:saveSettings', (_, settings) => {
-  backup.saveBackupSettings(settings);
+ipcMain.handle('backup:saveSettings', (event, settings) => {
+  requireTrustedIpc(event);
+  const next = sanitizeBackupSettings(settings);
+  backup.saveBackupSettings(next);
+  try {
+    setupBackupScheduler();
+  } catch {
+    // ignore
+  }
   return { success: true };
 });
 
-ipcMain.handle('backup:getPath', () => {
+ipcMain.handle('backup:getPath', (event) => {
+  requireTrustedIpc(event);
   return backup.getBackupPath();
 });
 
 // Update handlers
-ipcMain.handle('update:check', async () => {
+ipcMain.handle('update:check', async (event) => {
+  requireTrustedIpc(event);
   return await updater.checkForUpdates();
 });
 
-ipcMain.handle('update:getVersion', () => {
+ipcMain.handle('update:getVersion', (event) => {
+  requireTrustedIpc(event);
   return updater.getCurrentVersion();
 });
 
-ipcMain.handle('update:getSettings', () => {
+ipcMain.handle('update:getSettings', (event) => {
+  requireTrustedIpc(event);
   return updater.getUpdateSettings();
 });
 
-ipcMain.handle('update:saveSettings', (_, settings) => {
-  updater.saveUpdateSettings(settings);
-  applyAutoUpdaterSettings(settings);
+ipcMain.handle('update:saveSettings', (event, settings) => {
+  requireTrustedIpc(event);
+  const next = sanitizeUpdateSettings(settings);
+  updater.saveUpdateSettings(next);
+  applyAutoUpdaterSettings(next);
   return { success: true };
 });
 
-ipcMain.handle('update:download', async (_, downloadUrl) => {
+ipcMain.handle('update:download', async (event, downloadUrl) => {
+  requireTrustedIpc(event);
   try {
-    const result = await updater.downloadUpdate(downloadUrl);
+    if (downloadUrl !== undefined && downloadUrl !== null && String(downloadUrl).trim() !== '') {
+      return { success: false, error: 'invalid_args' };
+    }
+    const result = await updater.downloadUpdate();
     return result;
   } catch (err) {
     return { success: false, error: err.message };
   }
 });
 
-ipcMain.handle('update:install', async (_, filePath) => {
+ipcMain.handle('update:install', async (event, filePath) => {
+  requireTrustedIpc(event);
   try {
-    const result = await updater.installUpdate(filePath);
+    if (filePath !== undefined && filePath !== null && String(filePath).trim() !== '') {
+      return { success: false, error: 'invalid_args' };
+    }
+    const result = await updater.installUpdate();
     return result;
   } catch (err) {
     return { success: false, error: err.message };
+  }
+});
+
+ipcMain.on('update:status-request', (event) => {
+  if (!isTrustedIpcEvent(event)) return;
+  try {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (lastUpdateStatusPayload) {
+      mainWindow.webContents.send('update:status', lastUpdateStatusPayload);
+      return;
+    }
+    sendUpdateStatus({ state: 'idle' });
+  } catch {
+    // ignore
+  }
+});
+
+ipcMain.on('update:download', async (event) => {
+  if (!isTrustedIpcEvent(event)) return;
+  try {
+    // Triggers download using the configured provider (GitHub) and release artifacts.
+    // Progress will be emitted via the autoUpdater listeners.
+    await autoUpdater.downloadUpdate();
+  } catch (err) {
+    sendUpdateStatus({ state: 'error', error: err?.message || String(err) });
   }
 });

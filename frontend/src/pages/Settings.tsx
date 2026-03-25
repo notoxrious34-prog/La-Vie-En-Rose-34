@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api';
 import { Button } from '../components/ui/Button';
@@ -731,6 +731,51 @@ function RolesTab() {
 
   const queryClient = useQueryClient();
 
+  const rolesQuery = useQuery({
+    queryKey: ['roles'],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const res = await api.get('/api/roles');
+      return res.data;
+    },
+    enabled: canManageUsers,
+  });
+
+  const permissionsCatalogQuery = useQuery({
+    queryKey: ['permissions', 'catalog'],
+    staleTime: 60_000,
+    queryFn: async () => {
+      const res = await api.get('/api/roles/permissions');
+      return res.data;
+    },
+    enabled: canManageUsers,
+  });
+
+  const roleItems: Array<{ id: string; name: string; permissions: string[]; createdAt?: any }> = useMemo(() => {
+    const raw = (rolesQuery.data as any)?.items;
+    if (!Array.isArray(raw)) return [];
+    return raw
+      .map((r: any) => ({
+        id: String(r?.id ?? ''),
+        name: String(r?.name ?? r?.id ?? ''),
+        permissions: Array.isArray(r?.permissions) ? r.permissions.filter((p: any) => typeof p === 'string') : [],
+        createdAt: r?.createdAt,
+      }))
+      .filter((r) => Boolean(r.id));
+  }, [rolesQuery.data]);
+
+  const roleMap = useMemo(() => {
+    const m = new Map<string, { id: string; name: string; permissions: string[] }>();
+    for (const r of roleItems) m.set(r.id, { id: r.id, name: r.name, permissions: r.permissions });
+    return m;
+  }, [roleItems]);
+
+  const allPermissions: string[] = useMemo(() => {
+    const raw = (permissionsCatalogQuery.data as any)?.items;
+    if (!Array.isArray(raw)) return [];
+    return raw.filter((p: any) => typeof p === 'string');
+  }, [permissionsCatalogQuery.data]);
+
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState<'all' | 'admin' | 'manager' | 'employee'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -745,6 +790,39 @@ function RolesTab() {
     active: true,
   });
 
+  const [roleEditorOpen, setRoleEditorOpen] = useState(false);
+  const [roleEditorBusy, setRoleEditorBusy] = useState(false);
+  const [roleEditorError, setRoleEditorError] = useState<string | null>(null);
+  const [roleEditorIsNew, setRoleEditorIsNew] = useState(true);
+  const [roleEditor, setRoleEditor] = useState<{ id: string; name: string; permissions: string[] }>({
+    id: '',
+    name: '',
+    permissions: [],
+  });
+
+  const [selectedRoleId, setSelectedRoleId] = useState<string>(() => {
+    try {
+      const stored = window.localStorage.getItem('lver34.roles.selectedRoleId');
+      return stored && stored !== 'undefined' && stored !== 'null' ? stored : '';
+    } catch {
+      return '';
+    }
+  });
+
+  useEffect(() => {
+    try {
+      if (selectedRoleId) window.localStorage.setItem('lver34.roles.selectedRoleId', selectedRoleId);
+    } catch {
+      // ignore
+    }
+  }, [selectedRoleId]);
+
+  useEffect(() => {
+    if (roleItems.length === 0) return;
+    if (selectedRoleId && roleMap.has(selectedRoleId)) return;
+    setSelectedRoleId(roleItems[0]?.id || '');
+  }, [roleItems, roleMap, selectedRoleId]);
+
   const usersQuery = useQuery({
     queryKey: ['users'],
     staleTime: 60_000,
@@ -755,31 +833,46 @@ function RolesTab() {
     enabled: canManageUsers,
   });
 
-  const { data: adminPerms } = useQuery({
-    queryKey: ['permissions', 'admin'],
-    staleTime: 60_000,
-    queryFn: async () => {
-      const res = await api.get('/api/users/permissions/admin');
+  const roleCreateMutation = useMutation({
+    mutationFn: async (p: { id: string; name: string; permissions: string[] }) => {
+      const res = await api.post('/api/roles', p);
       return res.data;
-    }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+    },
+    onError: (e: any) => {
+      const resp = e?.response?.data;
+      toast('error', 'Création impossible', String(resp?.message ?? resp?.detail ?? resp?.error ?? e?.message ?? e));
+    },
   });
 
-  const { data: managerPerms } = useQuery({
-    queryKey: ['permissions', 'manager'],
-    staleTime: 60_000,
-    queryFn: async () => {
-      const res = await api.get('/api/users/permissions/manager');
+  const roleUpdateMutation = useMutation({
+    mutationFn: async (p: { id: string; name: string; permissions: string[] }) => {
+      const res = await api.put(`/api/roles/${encodeURIComponent(p.id)}`, { name: p.name, permissions: p.permissions });
       return res.data;
-    }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+    },
+    onError: (e: any) => {
+      const resp = e?.response?.data;
+      toast('error', 'Modification impossible', String(resp?.message ?? resp?.detail ?? resp?.error ?? e?.message ?? e));
+    },
   });
 
-  const { data: employeePerms } = useQuery({
-    queryKey: ['permissions', 'employee'],
-    staleTime: 60_000,
-    queryFn: async () => {
-      const res = await api.get('/api/users/permissions/employee');
+  const roleDeleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await api.delete(`/api/roles/${encodeURIComponent(id)}`);
       return res.data;
-    }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['roles'] });
+    },
+    onError: (e: any) => {
+      const resp = e?.response?.data;
+      toast('error', 'Suppression impossible', String(resp?.message ?? resp?.detail ?? resp?.error ?? e?.message ?? e));
+    },
   });
 
   const createMutation = useMutation({
@@ -887,23 +980,25 @@ function RolesTab() {
   };
 
   const items: any[] = Array.isArray((usersQuery.data as any)?.items) ? (usersQuery.data as any).items : [];
-  const filtered = items
-    .filter((u) => {
-      const q = search.trim().toLowerCase();
-      if (!q) return true;
-      const hay = `${u.displayName ?? ''} ${u.full_name ?? ''} ${u.username ?? ''} ${u.email ?? ''}`.toLowerCase();
-      return hay.includes(q);
-    })
-    .filter((u) => {
-      if (roleFilter === 'all') return true;
-      const role = String(u.roleId ?? u.role ?? 'employee');
-      return role === roleFilter;
-    })
-    .filter((u) => {
-      if (statusFilter === 'all') return true;
-      const active = u.active === undefined ? true : Boolean(u.active);
-      return statusFilter === 'active' ? active : !active;
-    });
+  const filtered = useMemo(() => {
+    return items
+      .filter((u) => {
+        const q = search.trim().toLowerCase();
+        if (!q) return true;
+        const hay = `${u.displayName ?? ''} ${u.full_name ?? ''} ${u.username ?? ''} ${u.email ?? ''}`.toLowerCase();
+        return hay.includes(q);
+      })
+      .filter((u) => {
+        if (roleFilter === 'all') return true;
+        const role = String(u.roleId ?? u.role ?? 'employee');
+        return role === roleFilter;
+      })
+      .filter((u) => {
+        if (statusFilter === 'all') return true;
+        const active = u.active === undefined ? true : Boolean(u.active);
+        return statusFilter === 'active' ? active : !active;
+      });
+  }, [items, roleFilter, search, statusFilter]);
 
   return (
     <div className="space-y-6">
@@ -957,34 +1052,125 @@ function RolesTab() {
           </div>
         </Card>
 
-        <div className="grid grid-cols-3 gap-4">
-          {[
-            { role: 'admin', perms: adminPerms, desc: 'Accès complet' },
-            { role: 'manager', perms: managerPerms, desc: 'Accès limité' },
-            { role: 'employee', perms: employeePerms, desc: 'Accès POS uniquement' }
-          ].map(({ role, perms, desc }) => (
-            <Card
-              key={role}
-              className="p-4"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Shield className="h-4 w-4" />
-                <span className="font-medium capitalize text-[color:var(--fg)]">{role}</span>
-              </div>
-              <p className="text-xs text-[color:var(--fg-subtle)] mb-3">{desc}</p>
-              <div className="flex flex-wrap gap-1">
-                {perms?.permissions?.map((p: string) => (
-                  <span
-                    key={p}
-                    className="text-xs px-2 py-1 rounded border border-[color:var(--border-soft)] bg-[color:color-mix(in_srgb,var(--surface-1)_70%,transparent)] text-[color:var(--fg-muted)]"
+        <Card className="p-4 flex flex-col gap-3">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
+              <h3 className="font-medium text-[color:var(--fg)]">Rôles</h3>
+              {rolesQuery.isLoading && <span className="text-xs text-[color:var(--fg-muted)]">Chargement...</span>}
+              {rolesQuery.isError && <span className="text-xs text-[color:var(--danger)]">Erreur de chargement</span>}
+            </div>
+
+            {isAdminActor && (
+              <Button
+                variant="luxe"
+                className="h-10 whitespace-nowrap px-4"
+                onClick={() => {
+                  setRoleEditorError(null);
+                  setRoleEditorIsNew(true);
+                  setRoleEditor({ id: '', name: '', permissions: [] });
+                  setRoleEditorOpen(true);
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                Nouveau rôle
+              </Button>
+            )}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            {roleItems.map((r) => {
+              const isSelected = r.id === selectedRoleId;
+              const canDelete = isAdminActor && r.id !== 'admin' && r.id !== 'manager' && r.id !== 'employee';
+              return (
+                <button
+                  key={r.id}
+                  type="button"
+                  className="text-left"
+                  onClick={() => setSelectedRoleId(r.id)}
+                >
+                  <Card
+                    className={
+                      `p-4 cursor-pointer transition border ` +
+                      (isSelected
+                        ? 'border-[color:color-mix(in_srgb,var(--accent)_55%,transparent)]'
+                        : 'border-[color:var(--border-soft)]')
+                    }
                   >
-                    {p}
-                  </span>
-                ))}
-              </div>
-            </Card>
-          ))}
-        </div>
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Shield className="h-4 w-4" />
+                        <span className="font-medium text-[color:var(--fg)] truncate">{r.name || r.id}</span>
+                      </div>
+                      <span className="text-[11px] px-2 py-0.5 rounded border border-[color:var(--border-soft)] text-[color:var(--fg-muted)]">
+                        {r.id}
+                      </span>
+                    </div>
+
+                    <div className="flex flex-wrap gap-1">
+                      {(r.permissions || []).slice(0, 10).map((p) => (
+                        <span
+                          key={p}
+                          className="text-xs px-2 py-1 rounded border border-[color:var(--border-soft)] bg-[color:color-mix(in_srgb,var(--surface-1)_70%,transparent)] text-[color:var(--fg-muted)]"
+                        >
+                          {p}
+                        </span>
+                      ))}
+                      {Array.isArray(r.permissions) && r.permissions.length > 10 && (
+                        <span className="text-xs px-2 py-1 rounded border border-[color:var(--border-soft)] text-[color:var(--fg-muted)]">
+                          +{r.permissions.length - 10}
+                        </span>
+                      )}
+                    </div>
+
+                    {isAdminActor && (
+                      <div className="mt-3 flex items-center justify-end gap-2">
+                        <Button
+                          variant="secondary"
+                          className="h-9"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setRoleEditorError(null);
+                            setRoleEditorIsNew(false);
+                            setRoleEditor({ id: r.id, name: r.name || r.id, permissions: Array.isArray(r.permissions) ? r.permissions : [] });
+                            setRoleEditorOpen(true);
+                          }}
+                        >
+                          Modifier
+                        </Button>
+
+                        <Button
+                          variant="outline"
+                          className="h-9"
+                          disabled={!canDelete || roleDeleteMutation.isPending}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            if (!canDelete) return;
+                            pushToast({
+                              kind: 'info',
+                              title: 'Confirmation requise',
+                              message: `Supprimer le rôle ${r.name || r.id} ?`,
+                              actionLabel: 'Confirmer',
+                              onAction: () => {
+                                roleDeleteMutation.mutate(r.id, {
+                                  onSuccess: () => toast('success', 'Rôle supprimé'),
+                                });
+                              },
+                              ttlMs: 6000,
+                            });
+                          }}
+                        >
+                          Supprimer
+                        </Button>
+                      </div>
+                    )}
+                  </Card>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
 
         <div>
           <h3 className="font-medium text-[color:var(--fg)] mb-3">Utilisateurs ({filtered.length})</h3>
@@ -997,8 +1183,9 @@ function RolesTab() {
             )}
             {filtered.map((u: any) => {
               const role = String(u.roleId ?? u.role ?? 'employee');
+              const normalizedRole = roleMap.has(role) ? role : 'employee';
               const active = u.active === undefined ? true : Boolean(u.active);
-              const isAdminTarget = role === 'admin';
+              const isAdminTarget = normalizedRole === 'admin';
               const isSelf = String(u.id) === String(me?.id || '');
               const display = u.displayName || u.full_name || u.username || u.email || u.id;
               const initial = String(display).trim().charAt(0).toUpperCase();
@@ -1026,25 +1213,30 @@ function RolesTab() {
 
                   <div className="flex flex-wrap items-center gap-2">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[role] || roleColors.employee}`}
+                      className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[normalizedRole] || roleColors.employee}`}
                     >
-                      {role}
+                      {normalizedRole}
                     </span>
 
                     <select
-                      value={role}
+                      value={normalizedRole}
                       disabled={roleMutation.isPending || isSelf || (!isAdminActor && isAdminTarget)}
                       onChange={(e) => {
-                        const next = e.target.value as 'admin' | 'manager' | 'employee';
-                        // Managers cannot assign admin.
+                        const next = String(e.target.value || 'employee');
+                        if (!roleMap.has(next) && next !== 'admin' && next !== 'manager' && next !== 'employee') return;
                         if (!isAdminActor && next === 'admin') return;
-                        roleMutation.mutate({ id: String(u.id), roleId: next });
+                        roleMutation.mutate({ id: String(u.id), roleId: next as any });
                       }}
                       className="h-9 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface-1)] px-3 text-xs text-[color:var(--fg)] focus:outline-none transition focus-visible:shadow-[var(--focus-ring)] focus-visible:border-[color:var(--accent)]"
                     >
-                      {isAdminActor && <option value="admin">admin</option>}
-                      <option value="manager">manager</option>
-                      <option value="employee">employee</option>
+                      {roleItems.map((r) => {
+                        if (!isAdminActor && r.id === 'admin') return null;
+                        return (
+                          <option key={r.id} value={r.id}>
+                            {r.id}
+                          </option>
+                        );
+                      })}
                     </select>
 
                     <span
@@ -1101,6 +1293,114 @@ function RolesTab() {
           </div>
         </div>
       </div>
+
+      <AnimatedModal
+        open={roleEditorOpen}
+        onClose={() => setRoleEditorOpen(false)}
+        title={roleEditor.id ? 'Modifier un rôle' : 'Créer un rôle'}
+        description="ID + nom + permissions (liste contrôlée)."
+        maxWidthClassName="max-w-2xl"
+      >
+        {roleEditorError && (
+          <div className="mb-4 rounded-2xl border border-[color:color-mix(in_srgb,var(--danger)_24%,transparent)] bg-[color:color-mix(in_srgb,var(--danger)_10%,transparent)] p-3 text-sm text-[color:var(--danger)]">
+            {roleEditorError}
+          </div>
+        )}
+
+        <div className="grid gap-4">
+          <Input
+            label="Role ID"
+            value={roleEditor.id}
+            onChange={(e) => setRoleEditor((p) => ({ ...p, id: e.target.value }))}
+            placeholder="ex: supervisor"
+            autoComplete="off"
+            disabled={!roleEditorIsNew}
+          />
+          <Input
+            label="Nom"
+            value={roleEditor.name}
+            onChange={(e) => setRoleEditor((p) => ({ ...p, name: e.target.value }))}
+            placeholder="Nom affiché"
+            autoComplete="off"
+          />
+
+          <div>
+            <div className="text-sm font-medium text-[color:var(--fg-muted)] mb-2">Permissions</div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+              {allPermissions.map((p) => {
+                const checked = roleEditor.permissions.includes(p);
+                return (
+                  <label
+                    key={p}
+                    className="flex items-center gap-2 rounded-xl border border-[color:var(--border-soft)] bg-[color:var(--surface-1)] px-3 py-2 text-xs text-[color:var(--fg)]"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={(e) => {
+                        const next = e.target.checked;
+                        setRoleEditor((prev) => {
+                          const set = new Set(prev.permissions);
+                          if (next) set.add(p);
+                          else set.delete(p);
+                          return { ...prev, permissions: Array.from(set) };
+                        });
+                      }}
+                    />
+                    {p}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="mt-2 flex items-center justify-end gap-2">
+            <Button variant="secondary" onClick={() => setRoleEditorOpen(false)} disabled={roleEditorBusy}>
+              Annuler
+            </Button>
+            <Button
+              onClick={async () => {
+                setRoleEditorBusy(true);
+                setRoleEditorError(null);
+                try {
+                  const id = String(roleEditor.id || '').trim();
+                  const name = String(roleEditor.name || '').trim();
+                  const permissions = Array.from(new Set(roleEditor.permissions.map((x) => String(x || '').trim()).filter(Boolean)));
+                  if (!roleEditor.id) {
+                    setRoleEditorError("L'ID du rôle est requis.");
+                    return;
+                  }
+                  if (!name) {
+                    setRoleEditorError('Le nom du rôle est requis.');
+                    return;
+                  }
+                  if (permissions.length === 0) {
+                    setRoleEditorError('Sélectionnez au moins une permission.');
+                    return;
+                  }
+
+                  if (roleMap.has(id)) {
+                    await roleUpdateMutation.mutateAsync({ id, name, permissions });
+                    toast('success', 'Rôle mis à jour');
+                  } else {
+                    await roleCreateMutation.mutateAsync({ id, name, permissions });
+                    toast('success', 'Rôle créé');
+                  }
+                  setRoleEditorOpen(false);
+                } catch (e: any) {
+                  const resp = e?.response?.data;
+                  setRoleEditorError(String(resp?.message ?? resp?.detail ?? resp?.error ?? e?.message ?? e));
+                } finally {
+                  setRoleEditorBusy(false);
+                }
+              }}
+              disabled={roleEditorBusy}
+            >
+              {roleEditorBusy ? 'Sauvegarde...' : 'Sauvegarder'}
+            </Button>
+          </div>
+        </div>
+      </AnimatedModal>
 
       <AnimatedModal
         open={createOpen}

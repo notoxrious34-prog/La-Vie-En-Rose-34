@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 const os = require('os');
-const { execSync } = require('child_process');
+const { spawnSync } = require('child_process');
 
 const { ensureAuth, getDb, getFirebaseModules } = require('./firebase');
 const cache = require('./license-cache');
@@ -52,9 +52,16 @@ function validateLicenseFormat(licenseKey) {
   return pattern.test(normalizeKey(licenseKey));
 }
 
-function safeExec(command) {
+function safeExec(file, args) {
   try {
-    return execSync(command, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], timeout: 3000 }).trim();
+    const res = spawnSync(file, Array.isArray(args) ? args : [], {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'ignore'],
+      timeout: 3000,
+      windowsHide: true,
+      shell: false,
+    });
+    return String(res.stdout || '').trim();
   } catch {
     return '';
   }
@@ -71,19 +78,19 @@ function parseFirstNonHeaderLine(output) {
 }
 
 function getWindowsCpuId() {
-  const out = safeExec('wmic cpu get ProcessorId');
+  const out = safeExec('wmic', ['cpu', 'get', 'ProcessorId']);
   return parseFirstNonHeaderLine(out).replace(/\s+/g, '');
 }
 
 function getWindowsBaseboardId() {
   // Prefer SerialNumber; fallback to Product.
-  const serialOut = safeExec('wmic baseboard get SerialNumber');
+  const serialOut = safeExec('wmic', ['baseboard', 'get', 'SerialNumber']);
   const serial = parseFirstNonHeaderLine(serialOut).replace(/\s+/g, '');
   if (serial && serial.toLowerCase() !== 'to' && serial.toLowerCase() !== 'be' && serial.toLowerCase() !== 'filled' && serial.toLowerCase() !== 'by' && serial.toLowerCase() !== 'o.e.m.') {
     return serial;
   }
 
-  const prodOut = safeExec('wmic baseboard get Product');
+  const prodOut = safeExec('wmic', ['baseboard', 'get', 'Product']);
   return parseFirstNonHeaderLine(prodOut).replace(/\s+/g, '');
 }
 

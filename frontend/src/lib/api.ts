@@ -48,14 +48,27 @@ export const api = axios.create({
   },
 });
 
+function isLikelyJwt(token: string): boolean {
+  if (!token) return false;
+  if (token === 'undefined' || token === 'null') return false;
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  // Basic size guardrails (avoid absurdly large header/payload)
+  if (parts[0].length < 10 || parts[1].length < 10 || parts[0].length > 4096 || parts[1].length > 16384) return false;
+  return true;
+}
+
 // Request interceptor with error handling
 api.interceptors.request.use(
   (config) => {
     try {
       const token = localStorage.getItem('lver_token');
-      if (token) {
+      if (token && isLikelyJwt(token)) {
         config.headers = config.headers ?? {};
         config.headers.Authorization = `Bearer ${token}`;
+      } else if (token) {
+        // Clean up corrupted storage values
+        localStorage.removeItem('lver_token');
       }
       
       // Add request timestamp for debugging

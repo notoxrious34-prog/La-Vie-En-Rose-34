@@ -11,10 +11,34 @@
   const roseCanvas = document.getElementById('roseCanvas');
 
   const params = new URLSearchParams(window.location.search);
-  const logoUrl = params.get('logo') || './brand-mark.png';
-  const wordmarkUrl = params.get('wordmark') || '';
+  const logoUrl      = params.get('logo')         || '';
+  const wordmarkUrl  = params.get('wordmark')      || '';
+  // FIX 4: fallback uses app:// URL (from main.js) — not a relative ./path inside .asar
+  const logoFallback = params.get('logoFallback')  || '';
   const minDurationMs = Math.max(4000, Math.min(6000, Number(params.get('minDurationMs') || 5200)));
   const soundEnabled = String(params.get('sound') || '1') !== '0';
+
+  const resolveLogoSource = () => {
+    const trimmed = (s) => {
+      try {
+        return String(s || '').trim();
+      } catch {
+        return '';
+      }
+    };
+
+    const primary = trimmed(logoUrl);
+    if (primary) return primary;
+    const fb = trimmed(logoFallback);
+    if (fb) return fb;
+    try {
+      const existing = trimmed(logoImg?.src);
+      if (existing) return existing;
+    } catch {
+      // ignore
+    }
+    return '';
+  };
 
   const isProbablyFileUrl = (u) => {
     try {
@@ -24,19 +48,7 @@
     }
   };
 
-  const pickFirstWorkingLogo = () => {
-    const candidates = [];
-    if (logoUrl) candidates.push(logoUrl);
-    candidates.push('./brand-mark.png');
-    candidates.push('./LVR34_0.png');
-    const uniq = [];
-    for (const c of candidates) {
-      if (!c) continue;
-      if (uniq.includes(c)) continue;
-      uniq.push(c);
-    }
-    return uniq;
-  };
+  // (pickFirstWorkingLogo removed — fallbacks now use app:// URLs from main.js)
 
   const detectLowEnd = () => {
     try {
@@ -68,21 +80,18 @@
   if (subtitle) subtitle.textContent = SUBTITLE;
 
   if (logoImg) {
-    const candidates = pickFirstWorkingLogo();
+    // Build candidate list: provided logo URL → app:// fallback → nothing.
+    // Do NOT include './brand-mark.png' — that relative path resolves inside
+    // the .asar where the file does not exist.
+    const candidates = [logoUrl, logoFallback].filter(Boolean);
     let idx = 0;
     const setNext = () => {
-      const next = candidates[idx];
-      idx += 1;
+      const next = candidates[idx++];
       if (!next) return;
-      try {
-        logoImg.src = next;
-      } catch {
-        // ignore
-      }
+      try { logoImg.src = next; } catch { /* ignore */ }
     };
     logoImg.addEventListener('error', () => {
-      if (idx >= candidates.length) return;
-      setNext();
+      if (idx < candidates.length) setNext();
     });
     setNext();
   }
@@ -92,12 +101,8 @@
   if (wordmarkImg && wordmarkUrl) {
     wordmarkImg.src = wordmarkUrl;
     wordmarkImg.addEventListener('error', () => {
-      try {
-        // fallback: try sibling file
-        wordmarkImg.src = './LVR34_0.png';
-      } catch {
-        // ignore
-      }
+      // FIX 4: no relative fallback inside .asar — just hide the element gracefully
+      try { wordmarkImg.style.display = 'none'; } catch { /* ignore */ }
     });
   }
 
@@ -231,15 +236,17 @@
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 
     const img = new Image();
-    // Avoid setting crossOrigin for file:// URLs; it can cause unexpected behavior in production.
-    if (!isProbablyFileUrl(logoUrl)) {
-      try {
-        img.crossOrigin = 'anonymous';
-      } catch {
-        // ignore
-      }
+    // Do NOT set crossOrigin for app:// or file:// local URLs —
+    // these are served without CORS headers and setting crossOrigin would
+    // cause the request to fail with a cross-origin error.
+    const isLocalUrl = (u) => !u || u.startsWith('app://') || u.startsWith('file:') || u.startsWith('http://localhost');
+    if (!isLocalUrl(logoUrl)) {
+      try { img.crossOrigin = 'anonymous'; } catch { /* ignore */ }
     }
-    img.src = logoUrl;
+    const resolvedLogoSrc = resolveLogoSource();
+    if (resolvedLogoSrc) {
+      img.src = resolvedLogoSrc;
+    }
 
     const off = document.createElement('canvas');
     const offCtx = off.getContext('2d', { willReadFrequently: true });
@@ -306,8 +313,8 @@
     };
 
     const t0 = performance.now();
-    const phaseDelay = 900; // after black void + ignition
-    const phaseDur = lowEnd ? 1650 : 1850;
+    const phaseDelay = 300;
+    const phaseDur = 900;
 
     const draw = (t) => {
       if (stopped) return;
@@ -375,14 +382,13 @@
     img.addEventListener(
       'error',
       () => {
-        // If the provided logo URL fails in production, try the built-in fallback.
+        // FIX 4: use the app:// fallback URL passed from main.js,
+        // not a relative path that doesn't exist inside the .asar.
         try {
-          if (logoUrl !== './brand-mark.png') {
-            img.src = './brand-mark.png';
+          if (logoFallback && img.src !== logoFallback) {
+            img.src = logoFallback;
           }
-        } catch {
-          // ignore
-        }
+        } catch { /* ignore */ }
       },
       { once: true }
     );
@@ -468,18 +474,25 @@
     }, 540);
   };
 
-  const minTimer = window.setTimeout(() => {
-    exit();
-  }, minDurationMs);
+  // Do NOT auto-close the splash just because the minimum duration elapsed.
+  // The main process controls when to close; we only enforce the minimum.
+  let closeTimer = null;
+  const requestExit = () => {
+    try {
+      if (closeTimer) window.clearTimeout(closeTimer);
+    } catch {
+      // ignore
+    }
+    const elapsed = Date.now() - start;
+    const remain = Math.max(0, minDurationMs - elapsed);
+    closeTimer = window.setTimeout(exit, remain);
+  };
 
   // If main process asks to close now, wait until min duration is satisfied.
   try {
     if (window.electronAPI?.splash?.onCloseRequested) {
       unsubscribeCloseRequested = window.electronAPI.splash.onCloseRequested(() => {
-        const elapsed = Date.now() - start;
-        const remain = Math.max(0, minDurationMs - elapsed);
-        window.clearTimeout(minTimer);
-        window.setTimeout(exit, remain);
+        requestExit();
       });
     }
   } catch {
@@ -491,6 +504,7 @@
     () => {
       try {
         if (typeof unsubscribeCloseRequested === 'function') unsubscribeCloseRequested();
+        if (closeTimer) window.clearTimeout(closeTimer);
       } catch {
         // ignore
       }

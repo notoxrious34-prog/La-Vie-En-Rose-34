@@ -21,8 +21,10 @@ import { purchasesRouter } from './routes/purchases';
 import { analyticsRouter } from './routes/analytics';
 import { variantsRouter } from './routes/variants';
 import { usersRouter } from './routes/users';
+import { rolesRouter } from './routes/roles';
 import { activityRouter } from './routes/activity';
 import { settingsRouter } from './routes/settings';
+import { requireAuth, requireRole } from './middleware/auth';
 import { requestContext } from './middleware/requestContext';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
 import { logReq } from './lib/logger';
@@ -93,7 +95,7 @@ const adminPanelHtmlPath = isProduction
   ? path.join(__dirname, '..', '..', 'licensing', 'admin-panel', 'admin.html')
   : path.join(process.cwd(), '..', 'licensing', 'admin-panel', 'admin.html');
 
-app.get('/admin-panel/admin', (_req, res) => {
+app.get('/admin-panel/admin', requireAuth, requireRole(['admin']), (_req, res) => {
   if (fs.existsSync(adminPanelHtmlPath)) {
     res.sendFile(adminPanelHtmlPath);
     return;
@@ -134,6 +136,7 @@ app.use('/api/purchases', purchasesRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/variants', variantsRouter);
 app.use('/api/users', usersRouter);
+app.use('/api/roles', rolesRouter);
 app.use('/api/activity', activityRouter);
 app.use('/api/settings', settingsRouter);
 

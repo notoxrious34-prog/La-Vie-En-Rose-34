@@ -55,8 +55,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getVersion: () => ipcRenderer.invoke('update:getVersion'),
     getSettings: () => ipcRenderer.invoke('update:getSettings'),
     saveSettings: (settings) => ipcRenderer.invoke('update:saveSettings', settings),
-    download: (url) => ipcRenderer.invoke('update:download', url),
-    install: (path) => ipcRenderer.invoke('update:install', path),
+    download: () => ipcRenderer.invoke('update:download'),
+    install: () => ipcRenderer.invoke('update:install'),
     quitAndInstall: () => ipcRenderer.invoke('update:quitAndInstall'),
     onStatus: (callback) => {
       const handler = (_event, payload) => callback(payload);
